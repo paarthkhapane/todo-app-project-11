@@ -21,6 +21,15 @@ class User(db.Model):
     # One-to-many relationship: A user can have many tasks
     tasks = db.relationship("Task", backref="user", lazy=True)
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "role": self.role,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
     def __repr__(self):
         return f"<User {self.email}>"
 

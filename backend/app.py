@@ -45,8 +45,17 @@ from models import db, User, Task
 # Initialize SQLAlchemy with the Flask app instance
 db.init_app(app)
 
+# Import reusable authentication helpers from auth.py
+from auth import (
+    get_jwt_secret_key,
+    hash_password,
+    verify_password,
+    generate_token,
+    token_required
+)
 
-# Simple test route to verify server is running
+
+# Health check test route
 @app.route("/", methods=["GET"])
 def index():
     return jsonify({
@@ -55,24 +64,110 @@ def index():
     })
 
 
+# ==========================================
+# Authentication Endpoints
+# ==========================================
+
+@app.route("/api/auth/register", methods=["POST"])
+def register():
+    data = request.get_json(silent=True)
+    if data is None or not isinstance(data, dict):
+        return jsonify({"error": "Request body must be valid JSON"}), 400
+
+    name = data.get("name")
+    email = data.get("email")
+    password = data.get("password")
+
+    # Validate required fields
+    if not name or not isinstance(name, str) or not name.strip():
+        return jsonify({"error": "'name' is required and cannot be empty"}), 400
+
+    if not email or not isinstance(email, str) or not email.strip():
+        return jsonify({"error": "'email' is required and cannot be empty"}), 400
+
+    if not password or not isinstance(password, str) or not password.strip():
+        return jsonify({"error": "'password' is required and cannot be empty"}), 400
+
+    cleaned_email = email.strip().lower()
+
+    # Check whether the email already exists
+    try:
+        existing_user = User.query.filter_by(email=cleaned_email).first()
+    except Exception:
+        return jsonify({"error": "Database error while checking email availability"}), 500
+
+    if existing_user:
+        return jsonify({"error": "Email is already registered"}), 409
+
+    # Hash the password securely and assign default role 'user'
+    hashed_password = hash_password(password)
+    new_user = User(
+        name=name.strip(),
+        email=cleaned_email,
+        password_hash=hashed_password,
+        role="user"
+    )
+
+    try:
+        db.session.add(new_user)
+        db.session.commit()
+        return jsonify({
+            "message": "User registered successfully",
+            "user": new_user.to_dict()
+        }), 201
+    except Exception:
+        db.session.rollback()
+        return jsonify({"error": "Database error while registering user"}), 500
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def login():
+    data = request.get_json(silent=True)
+    if data is None or not isinstance(data, dict):
+        return jsonify({"error": "Request body must be valid JSON"}), 400
+
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not isinstance(email, str) or not email.strip() or not password or not isinstance(password, str):
+        return jsonify({"error": "Both 'email' and 'password' are required"}), 400
+
+    try:
+        user = User.query.filter_by(email=email.strip().lower()).first()
+    except Exception:
+        return jsonify({"error": "Database error while logging in"}), 500
+
+    # Verify password without revealing if email or password was incorrect
+    if not user or not verify_password(user.password_hash, password):
+        return jsonify({"error": "Invalid email or password"}), 401
+
+    # Generate JWT token using auth helper
+    try:
+        token = generate_token(user.id, user.role)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 500
+
+    return jsonify({
+        "token": token,
+        "user": user.to_dict()
+    }), 200
+
+
+# ==========================================
+# Protected Task CRUD Endpoints
+# ==========================================
+
 # Task Creation API Endpoint
 @app.route("/api/tasks", methods=["POST"])
-def create_task():
+@token_required
+def create_task(current_user):
     # 1. Read JSON request body
     data = request.get_json(silent=True)
     if data is None or not isinstance(data, dict):
         return jsonify({"error": "Request body must be valid JSON"}), 400
 
-    # 2. Validate required fields: user_id and title
-    user_id = data.get("user_id")
+    # 2. Validate required title
     title = data.get("title")
-
-    if user_id is None:
-        return jsonify({"error": "'user_id' is required"}), 400
-
-    if not isinstance(user_id, int):
-        return jsonify({"error": "'user_id' must be an integer"}), 400
-
     if not title or not isinstance(title, str) or not title.strip():
         return jsonify({"error": "'title' is required and cannot be empty"}), 400
 
@@ -92,9 +187,9 @@ def create_task():
                 "error": "Invalid 'due_date' format. Please use ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)"
             }), 400
 
-    # 4. Instantiate Task object (use model defaults if status or priority are omitted)
+    # 4. Instantiate Task object bound to authenticated user
     task = Task(
-        user_id=user_id,
+        user_id=current_user.id,
         title=title.strip(),
         description=description,
         status=status if status is not None else "pending",
@@ -107,76 +202,88 @@ def create_task():
         db.session.add(task)
         db.session.commit()
         return jsonify(task.to_dict()), 201
-    except Exception as e:
+    except Exception:
         db.session.rollback()
         return jsonify({"error": "Database error while creating task"}), 500
 
 
-# Task Retrieval API Endpoint (All tasks)
+# Task Retrieval API Endpoint (Only authenticated user's tasks)
 @app.route("/api/tasks", methods=["GET"])
-def get_tasks():
+@token_required
+def get_tasks(current_user):
     try:
-        tasks = Task.query.all()
+        tasks = Task.query.filter_by(user_id=current_user.id).all()
         return jsonify([task.to_dict() for task in tasks]), 200
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Database error while fetching tasks"}), 500
 
 
-# Single Task Retrieval API Endpoint
+# Single Task Retrieval API Endpoint (Ownership enforced)
 @app.route("/api/tasks/<int:task_id>", methods=["GET"])
-def get_task(task_id):
+@token_required
+def get_task(current_user, task_id):
     try:
         task = db.session.get(Task, task_id)
-        if not task:
-            return jsonify({"error": "Task not found"}), 404
-        return jsonify(task.to_dict()), 200
-    except Exception as e:
-        return jsonify({"error": "Database error while fetching task"}), 500
-
-
-# Task Update API Endpoint
-@app.route("/api/tasks/<int:task_id>", methods=["PUT"])
-def update_task(task_id):
-    # 1. Find the existing task by ID
-    try:
-        task = db.session.get(Task, task_id)
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Database error while fetching task"}), 500
 
     if not task:
         return jsonify({"error": "Task not found"}), 404
 
-    # 2. Read and validate JSON request body
+    if task.user_id != current_user.id:
+        return jsonify({"error": "You do not have permission to access this task"}), 403
+
+    return jsonify(task.to_dict()), 200
+
+
+# Task Update API Endpoint (Ownership enforced)
+@app.route("/api/tasks/<int:task_id>", methods=["PUT"])
+@token_required
+def update_task(current_user, task_id):
+    # 1. Find the existing task by ID
+    try:
+        task = db.session.get(Task, task_id)
+    except Exception:
+        return jsonify({"error": "Database error while fetching task"}), 500
+
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+
+    # 2. Enforce ownership
+    if task.user_id != current_user.id:
+        return jsonify({"error": "You do not have permission to modify this task"}), 403
+
+    # 3. Read and validate JSON request body
     data = request.get_json(silent=True)
     if data is None or not isinstance(data, dict):
         return jsonify({"error": "Request body must be valid JSON"}), 400
 
-    # 3. Validate and update 'title' if provided
+    # 4. Validate and update 'title' if provided
     if "title" in data:
         title = data.get("title")
         if not title or not isinstance(title, str) or not title.strip():
             return jsonify({"error": "'title' must be a non-empty string"}), 400
         task.title = title.strip()
 
-    # 4. Update 'description' if provided
+    # 5. Update 'description' if provided
     if "description" in data:
         task.description = data.get("description")
 
-    # 5. Update 'status' if provided
+    # 6. Update 'status' if provided
     if "status" in data:
         status = data.get("status")
         if status is not None and not isinstance(status, str):
             return jsonify({"error": "'status' must be a string"}), 400
         task.status = status
 
-    # 6. Update 'priority' if provided
+    # 7. Update 'priority' if provided
     if "priority" in data:
         priority = data.get("priority")
         if priority is not None and not isinstance(priority, str):
             return jsonify({"error": "'priority' must be a string"}), 400
         task.priority = priority
 
-    # 7. Validate and update 'due_date' if provided
+    # 8. Validate and update 'due_date' if provided
     if "due_date" in data:
         due_date_raw = data.get("due_date")
         if due_date_raw is None or due_date_raw == "":
@@ -189,35 +296,40 @@ def update_task(task_id):
                     "error": "Invalid 'due_date' format. Please use ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)"
                 }), 400
 
-    # user_id is deliberately not modified
+    # user_id is deliberately immutable
 
-    # 8. Commit changes to the database
+    # 9. Commit changes to the database
     try:
         db.session.commit()
         return jsonify(task.to_dict()), 200
-    except Exception as e:
+    except Exception:
         db.session.rollback()
         return jsonify({"error": "Database error while updating task"}), 500
 
 
-# Task Deletion API Endpoint
+# Task Deletion API Endpoint (Ownership enforced)
 @app.route("/api/tasks/<int:task_id>", methods=["DELETE"])
-def delete_task(task_id):
+@token_required
+def delete_task(current_user, task_id):
     # 1. Find the existing task by ID
     try:
         task = db.session.get(Task, task_id)
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Database error while fetching task"}), 500
 
     if not task:
         return jsonify({"error": "Task not found"}), 404
 
-    # 2. Delete the task and commit transaction
+    # 2. Enforce ownership
+    if task.user_id != current_user.id:
+        return jsonify({"error": "You do not have permission to delete this task"}), 403
+
+    # 3. Delete the task and commit transaction
     try:
         db.session.delete(task)
         db.session.commit()
         return jsonify({"message": "Task deleted successfully"}), 200
-    except Exception as e:
+    except Exception:
         db.session.rollback()
         return jsonify({"error": "Database error while deleting task"}), 500
 
