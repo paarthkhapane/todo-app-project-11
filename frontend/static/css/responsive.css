@@ -1,0 +1,116 @@
+@import "./variables.css";
+
+@media (max-width: 1100px) {
+  .task-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stats-grid.admin-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 800px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell .sidebar {
+    position: fixed;
+    z-index: 40;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    height: 64px;
+    flex-direction: row;
+    border-top: 1px solid var(--color-border);
+    border-right: 0;
+    padding: var(--space-2);
+  }
+
+  .sidebar-brand {
+    display: none;
+  }
+
+  .sidebar-nav {
+    height: 100%;
+    flex: 1 1 80%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .sidebar .sidebar-footer {
+    flex: 0 0 20%;
+    margin-top: 0;
+  }
+
+  .nav-item {
+    min-width: 0;
+    min-height: 46px;
+    justify-content: center;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    text-align: center;
+    font-size: var(--font-size-xs);
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-main {
+    padding-bottom: 64px;
+  }
+
+  .dashboard-header {
+    height: auto;
+    min-height: var(--header-height);
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+  }
+
+  .dashboard-content {
+    padding: var(--space-4);
+  }
+
+  .stats-grid,
+  .stats-grid.admin-stats,
+  .task-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-heading,
+  .search-row,
+  .toolbar,
+  .auth-options,
+  .modal-actions,
+  .form-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .section-heading .btn,
+  .search-input,
+  .form-actions .btn,
+  .modal-actions .btn {
+    width: 100%;
+  }
+
+  .auth-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-brand-panel {
+    min-height: 180px;
+    align-items: center;
+    padding: var(--space-6);
+  }
+
+  .auth-form-panel {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,170 @@
+
+.eyebrow {
+  margin: 0 0 var(--space-2);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.small {
+  font-size: var(--font-size-sm);
+}
+
+.prototype-logo {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.12);
+  font-size: var(--font-size-xl);
+  font-weight: 900;
+}
+
+.check-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.text-button,
+.icon-button {
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font-weight: 800;
+}
+
+.icon-button {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  font-size: 1.5rem;
+}
+
+.auth-switch,
+.demo-role-switch {
+  margin-top: var(--space-5);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+@media (max-width: 800px) {
+  .form-columns {
+    grid-template-columns: 1fr;
+  }
+}
+/* User Dashboard additions */
+
+.profile-name {
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.task-section-heading {
+    margin-top: var(--space-8);
+}
+
+.empty-state-icon {
+    font-size: 2.5rem;
+    margin-bottom: var(--space-4);
+    color: var(--color-primary);
+}
+
+.sidebar-footer {
+    margin-top: auto;
+}
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-nav {
+    flex: 1;
+}
+
+.task-section-heading {
+    margin-bottom: var(--space-4);
+}
+/* Task modal styling */
+
+.modal-backdrop[hidden] {
+    display: none;
+}
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(3px);
+}
+
+.modal {
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-modal);
+    padding: var(--space-6);
+}
+
+.modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.modal-header h2 {
+    margin: 0 0 var(--space-2);
+}
+
+.modal-header p {
+    margin: 0;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+}
+
+#task-form .field {
+    margin-bottom: var(--space-4);
+}
+
+#task-form .field-error {
+    margin-top: var(--space-1);
+}
+
+#task-form-error:empty,
+#task-title-error:empty,
+#task-date-error:empty {
+    display: none;
+}
+
+@media (max-width: 600px) {
+    .modal {
+        padding: var(--space-4);
+    }
+}

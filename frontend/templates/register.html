@@ -1,0 +1,105 @@
+
+{% extends "base.html" %}
+
+{% block title %}Register | FlowTask{% endblock %}
+
+{% block content %}
+<main class="auth-shell">
+
+    <aside class="auth-brand-panel">
+        <div>
+            <div class="prototype-logo">F</div>
+            <h2>FlowTask</h2>
+            <p>Plan clearly. Finish confidently.</p>
+        </div>
+    </aside>
+
+    <section class="auth-form-panel">
+        <div class="auth-card">
+
+            <p class="eyebrow">GET STARTED</p>
+            <h1>Create your account</h1>
+            <p class="muted">Join FlowTask and organise your work.</p>
+
+            <form id="register-form" novalidate>
+
+                <div class="field">
+                    <label for="full-name">Full Name</label>
+                    <input
+                        class="input"
+                        id="full-name"
+                        name="name"
+                        type="text"
+                        autocomplete="name"
+                        placeholder="Your name"
+                        required
+                    >
+                    <span class="field-error" id="name-error"></span>
+                </div>
+
+                <div class="field">
+                    <label for="email">Email Address</label>
+                    <input
+                        class="input"
+                        id="email"
+                        name="email"
+                        type="email"
+                        autocomplete="email"
+                        placeholder="name@example.com"
+                        required
+                    >
+                    <span class="field-error" id="email-error"></span>
+                </div>
+
+                <div class="field password-field">
+                    <label for="password">Password</label>
+                    <input
+                        class="input"
+                        id="password"
+                        name="password"
+                        type="password"
+                        autocomplete="new-password"
+                        placeholder="At least 8 characters"
+                        required
+                    >
+                    <button class="password-toggle" type="button"
+                            data-password-toggle="password">Show</button>
+                    <span class="field-error" id="password-error"></span>
+                </div>
+
+                <div class="field password-field">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input
+                        class="input"
+                        id="confirm-password"
+                        name="confirm_password"
+                        type="password"
+                        autocomplete="new-password"
+                        placeholder="Repeat your password"
+                        required
+                    >
+                    <button class="password-toggle" type="button"
+                            data-password-toggle="confirm-password">Show</button>
+                    <span class="field-error" id="confirm-error"></span>
+                </div>
+
+                <p class="field-error" id="register-error"></p>
+
+                <button class="btn btn-primary auth-submit" type="submit">
+                    Create Account
+                </button>
+
+            </form>
+
+            <p class="auth-switch">
+                Already have an account?
+                <a href="{{ url_for('login_page') }}" class="text-button">
+                    Log in
+                </a>
+            </p>
+
+        </div>
+    </section>
+
+</main>
+{% endblock %}
