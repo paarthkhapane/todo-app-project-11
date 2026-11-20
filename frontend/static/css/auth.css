@@ -1,0 +1,100 @@
+@import "./variables.css";
+
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(380px, 520px);
+  background: var(--color-surface);
+}
+
+.auth-brand-panel {
+  display: flex;
+  align-items: flex-end;
+  background: #312e81;
+  color: #fff;
+  padding: var(--space-12);
+}
+
+.auth-form-panel {
+  display: grid;
+  place-items: center;
+  padding: var(--space-8);
+}
+
+.auth-card {
+  width: min(100%, 440px);
+}
+
+.auth-card h1 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-3xl);
+  line-height: 1.15;
+}
+
+.auth-card form {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-6);
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-options,
+.modal-actions,
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.auth-submit {
+  width: 100%;
+}
+
+.auth-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Auth feedback and notification banner styles */
+.auth-feedback {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.auth-feedback.feedback-info {
+  background: var(--color-info-soft);
+  color: var(--color-info);
+  border: 1px solid #bfdbfe;
+}
+
+.auth-feedback.feedback-success {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+  border: 1px solid #bbf7d0;
+}
+
+.auth-feedback.feedback-error {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  border: 1px solid #fecaca;
+}
