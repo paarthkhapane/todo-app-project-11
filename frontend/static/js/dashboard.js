@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-    // Display current date
+    // Display current date formatted cleanly
     const dateElement = document.getElementById("dashboard-date");
 
     if (dateElement) {
@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
-    // Task filter buttons
+    // Task filter buttons - visual state & accessibility management
     const filterButtons = document.querySelectorAll("[data-filter]");
 
     filterButtons.forEach(function (button) {
@@ -23,9 +23,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
             filterButtons.forEach(function (btn) {
                 btn.classList.remove("active");
+                btn.classList.remove("is-active");
+                btn.setAttribute("aria-selected", "false");
             });
 
             button.classList.add("active");
+            button.classList.add("is-active");
+            button.setAttribute("aria-selected", "true");
 
             console.log("Selected task filter:", button.dataset.filter);
         });

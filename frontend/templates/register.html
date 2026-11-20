@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Register | FlowTask{% endblock %}
@@ -33,8 +32,9 @@
                         autocomplete="name"
                         placeholder="Your name"
                         required
+                        aria-describedby="name-error"
                     >
-                    <span class="field-error" id="name-error"></span>
+                    <span class="field-error" id="name-error" role="alert"></span>
                 </div>
 
                 <div class="field">
@@ -47,8 +47,9 @@
                         autocomplete="email"
                         placeholder="name@example.com"
                         required
+                        aria-describedby="email-error"
                     >
-                    <span class="field-error" id="email-error"></span>
+                    <span class="field-error" id="email-error" role="alert"></span>
                 </div>
 
                 <div class="field password-field">
@@ -61,10 +62,12 @@
                         autocomplete="new-password"
                         placeholder="At least 8 characters"
                         required
+                        aria-describedby="password-error"
                     >
                     <button class="password-toggle" type="button"
-                            data-password-toggle="password">Show</button>
-                    <span class="field-error" id="password-error"></span>
+                            data-password-toggle="password"
+                            aria-label="Show password">Show</button>
+                    <span class="field-error" id="password-error" role="alert"></span>
                 </div>
 
                 <div class="field password-field">
@@ -77,15 +80,18 @@
                         autocomplete="new-password"
                         placeholder="Repeat your password"
                         required
+                        aria-describedby="confirm-error"
                     >
                     <button class="password-toggle" type="button"
-                            data-password-toggle="confirm-password">Show</button>
-                    <span class="field-error" id="confirm-error"></span>
+                            data-password-toggle="confirm-password"
+                            aria-label="Show password">Show</button>
+                    <span class="field-error" id="confirm-error" role="alert"></span>
                 </div>
 
-                <p class="field-error" id="register-error"></p>
+                <div class="auth-feedback" id="register-feedback" role="alert" hidden></div>
+                <p class="field-error" id="register-error" role="alert"></p>
 
-                <button class="btn btn-primary auth-submit" type="submit">
+                <button class="btn btn-primary auth-submit" id="register-submit" type="submit">
                     Create Account
                 </button>
 

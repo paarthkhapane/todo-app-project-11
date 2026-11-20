@@ -5,37 +5,42 @@
 {% block content %}
 <div class="app-shell">
 
-    <!-- Sidebar -->
-    <aside class="sidebar">
+    <!-- Sidebar / Mobile Bottom Navigation -->
+    <aside class="sidebar" aria-label="Main Navigation">
         <div class="sidebar-brand">
             <div class="prototype-logo">F</div>
-            <div>
+            <div class="sidebar-brand-text">
                 <h2>FlowTask</h2>
                 <p class="muted small">Task Management</p>
             </div>
         </div>
 
-        <nav class="sidebar-nav">
-            <a href="#" class="nav-item active">
-                <span>▦</span> Dashboard
+        <nav class="sidebar-nav" aria-label="Navigation Links">
+            <a href="#" class="nav-item is-active active" aria-current="page">
+                <span class="nav-icon" aria-hidden="true">▦</span>
+                <span class="nav-label">Dashboard</span>
             </a>
 
             <a href="#" class="nav-item">
-                <span>✓</span> My Tasks
+                <span class="nav-icon" aria-hidden="true">✓</span>
+                <span class="nav-label">My Tasks</span>
             </a>
 
             <a href="#" class="nav-item">
-                <span>◷</span> Completed
+                <span class="nav-icon" aria-hidden="true">◷</span>
+                <span class="nav-label">Completed</span>
             </a>
 
-            <a href="#" class="nav-item">
-                <span>⚙</span> Settings
+            <a href="#" class="nav-item nav-item-settings desktop-only">
+                <span class="nav-icon" aria-hidden="true">⚙</span>
+                <span class="nav-label">Settings</span>
             </a>
         </nav>
 
-        <div class="sidebar-footer">
-            <a href="#" class="nav-item">
-                <span>↪</span> Logout
+        <div class="sidebar-footer desktop-only">
+            <a href="#" class="nav-item nav-item-logout">
+                <span class="nav-icon" aria-hidden="true">↪</span>
+                <span class="nav-label">Logout</span>
             </a>
         </div>
     </aside>
@@ -46,18 +51,28 @@
 
         <!-- Header -->
         <header class="dashboard-header">
-            <div>
+            <div class="dashboard-header-title">
+                <p class="eyebrow">OVERVIEW</p>
                 <h1>Dashboard</h1>
-                <p class="muted" id="dashboard-date"></p>
+                <p class="muted small header-date" id="dashboard-date"></p>
             </div>
 
             <div class="profile-area">
-                <div>
+                <div class="profile-info desktop-only">
                     <p class="profile-name" id="user-name">User</p>
-                    <p class="muted small">User Account</p>
+                    <p class="muted small profile-role">User Account</p>
                 </div>
 
-                <div class="profile-avatar">
+                <div class="header-mobile-actions mobile-only">
+                    <a href="#" class="header-action-btn" title="Settings" aria-label="Settings">
+                        <span aria-hidden="true">⚙</span>
+                    </a>
+                    <a href="#" class="header-action-btn header-action-logout" title="Logout" aria-label="Logout">
+                        <span aria-hidden="true">↪</span>
+                    </a>
+                </div>
+
+                <div class="profile-avatar" aria-label="User avatar">
                     U
                 </div>
             </div>
@@ -68,37 +83,46 @@
         <section class="dashboard-content">
 
             <!-- Welcome -->
-            <div class="section-heading">
+            <div class="section-heading dashboard-welcome">
                 <div>
                     <h2>Welcome back, <span id="welcome-name">User</span>!</h2>
-                    <p class="muted">Here's an overview of your tasks.</p>
+                    <p class="muted">Here's an overview of your tasks and progress.</p>
                 </div>
 
-                <button class="btn btn-primary" id="add-task-btn">
-                    + Add Task
+                <button class="btn btn-primary" id="add-task-btn" type="button">
+                    <span>+</span> Add Task
                 </button>
             </div>
 
 
             <!-- Statistics -->
-            <div class="stats-grid">
+            <div class="stats-grid" aria-label="Task overview statistics">
 
-                <div class="stat-card">
-                    <p class="stat-card-label">Total Tasks</p>
-                    <h3 class="stat-card-value" id="total-tasks">--</h3>
-                    <p class="muted small">All your tasks</p>
+                <div class="stat-card stat-card-total">
+                    <div class="stat-card-header">
+                        <span class="stat-card-label">Total Tasks</span>
+                        <span class="stat-card-icon" aria-hidden="true">📋</span>
+                    </div>
+                    <div class="stat-card-value" id="total-tasks">--</div>
+                    <p class="muted small stat-card-desc">All tasks across your workspace</p>
                 </div>
 
-                <div class="stat-card">
-                    <p class="stat-card-label">Pending Tasks</p>
-                    <h3 class="stat-card-value" id="pending-tasks">--</h3>
-                    <p class="muted small">Tasks remaining</p>
+                <div class="stat-card stat-card-pending">
+                    <div class="stat-card-header">
+                        <span class="stat-card-label">Pending Tasks</span>
+                        <span class="stat-card-icon" aria-hidden="true">⏳</span>
+                    </div>
+                    <div class="stat-card-value" id="pending-tasks">--</div>
+                    <p class="muted small stat-card-desc">Tasks currently remaining</p>
                 </div>
 
-                <div class="stat-card">
-                    <p class="stat-card-label">Completed Tasks</p>
-                    <h3 class="stat-card-value" id="completed-tasks">--</h3>
-                    <p class="muted small">Tasks finished</p>
+                <div class="stat-card stat-card-completed">
+                    <div class="stat-card-header">
+                        <span class="stat-card-label">Completed Tasks</span>
+                        <span class="stat-card-icon" aria-hidden="true">✅</span>
+                    </div>
+                    <div class="stat-card-value" id="completed-tasks">--</div>
+                    <p class="muted small stat-card-desc">Tasks successfully finished</p>
                 </div>
 
             </div>
@@ -107,24 +131,25 @@
             <!-- Tasks Section -->
             <div class="section-heading task-section-heading">
                 <div>
+                    <p class="eyebrow">WORKSPACE</p>
                     <h2>My Tasks</h2>
-                    <p class="muted">Manage and track your work.</p>
+                    <p class="muted">Manage and track your daily tasks.</p>
                 </div>
             </div>
 
 
             <!-- Filters -->
-            <div class="filter-tabs" id="task-filters">
+            <div class="filter-tabs" id="task-filters" role="tablist" aria-label="Task status filters">
 
-                <button class="filter-tab active" data-filter="all">
-                    All
+                <button class="filter-tab is-active active" data-filter="all" role="tab" aria-selected="true">
+                    All Tasks
                 </button>
 
-                <button class="filter-tab" data-filter="pending">
+                <button class="filter-tab" data-filter="pending" role="tab" aria-selected="false">
                     Pending
                 </button>
 
-                <button class="filter-tab" data-filter="completed">
+                <button class="filter-tab" data-filter="completed" role="tab" aria-selected="false">
                     Completed
                 </button>
 
@@ -135,18 +160,22 @@
             <div id="task-container">
 
                 <div class="empty-state" id="task-empty-state">
-                    <div class="empty-state-icon">✓</div>
+                    <div class="empty-state-content">
+                        <div class="empty-state-icon" aria-hidden="true">
+                            <span>✓</span>
+                        </div>
 
-                    <h3>Your tasks will appear here</h3>
+                        <h3>Your tasks will appear here</h3>
 
-                    <p class="muted">
-                        Once your tasks are loaded, you can manage them
-                        from this dashboard.
-                    </p>
+                        <p class="muted">
+                            Once your tasks are loaded, you can manage, filter, and track them
+                            from this dashboard.
+                        </p>
 
-                    <button class="btn btn-primary" id="empty-add-task-btn">
-                        + Create Your First Task
-                    </button>
+                        <button class="btn btn-primary" id="empty-add-task-btn" type="button">
+                            + Create Your First Task
+                        </button>
+                    </div>
                 </div>
 
             </div>
@@ -163,9 +192,10 @@
 
         <div class="modal-header">
             <div>
+                <p class="eyebrow">TASK DETAILS</p>
                 <h2 id="task-modal-title">Add Task</h2>
-                <p class="muted">Fill in the details of your task.</p>
-                </div>
+                <p class="muted small">Fill in the details of your task.</p>
+            </div>
             <button type="button" class="icon-button" id="close-task-modal" aria-label="Close modal">&times;</button>
         </div>
 
@@ -191,29 +221,31 @@
                     name="description"
                     class="textarea"
                     placeholder="Describe your task..."
-                    rows="4"
+                    rows="3"
                 ></textarea>
             </div>
 
-            <div class="field">
-                <label for="task-priority">Priority</label>
-                <select id="task-priority" name="priority" class="select">
-                    <option value="low">Low</option>
-                    <option value="medium" selected>Medium</option>
-                    <option value="high">High</option>
-                </select>
-            </div>
+            <div class="form-columns">
+                <div class="field">
+                    <label for="task-priority">Priority</label>
+                    <select id="task-priority" name="priority" class="select">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
 
-            <div class="field">
-                <label for="task-due-date">Due Date <span>*</span></label>
-                <input
-                    type="date"
-                    id="task-due-date"
-                    name="due_date"
-                    class="input"
-                    required
-                >
-                <p class="field-error" id="task-date-error"></p>
+                <div class="field">
+                    <label for="task-due-date">Due Date <span>*</span></label>
+                    <input
+                        type="date"
+                        id="task-due-date"
+                        name="due_date"
+                        class="input"
+                        required
+                    >
+                    <p class="field-error" id="task-date-error"></p>
+                </div>
             </div>
 
             <div class="modal-actions">

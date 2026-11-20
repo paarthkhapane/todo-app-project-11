@@ -1,56 +1,162 @@
 @import "./variables.css";
 
+/* ========================================================
+   1. Dashboard Layout & Shell
+   ======================================================== */
+
 .app-shell {
   min-height: 100vh;
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  background: var(--color-background);
 }
+
+.dashboard-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-content {
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: var(--space-8);
+  flex: 1;
+}
+
+.mobile-only {
+  display: none !important;
+}
+
+/* ========================================================
+   2. Sidebar Navigation (Desktop)
+   ======================================================== */
 
 .sidebar {
   position: sticky;
   top: 0;
   height: 100vh;
+  display: flex;
+  flex-direction: column;
   border-right: 1px solid var(--color-border);
   background: var(--color-surface);
   padding: var(--space-6) var(--space-4);
+  z-index: 20;
 }
 
 .sidebar-brand {
-  margin: 0 var(--space-3) var(--space-8);
-  font-size: var(--font-size-xl);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-8);
+  padding: 0 var(--space-2);
+}
+
+.sidebar-brand .prototype-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-primary), #6366f1);
+  color: #fff;
+  font-size: 1.25rem;
   font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+  border: none;
+}
+
+.sidebar-brand-text h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--color-text);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.sidebar-brand-text p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.2;
 }
 
 .sidebar-nav {
-  display: grid;
-  gap: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
 }
 
 .nav-item {
   display: flex;
-  min-height: 46px;
+  min-height: 44px;
   align-items: center;
   gap: var(--space-3);
   border-radius: var(--radius-md);
-  padding: 0.625rem 0.75rem;
+  padding: 0.625rem 0.875rem;
   color: var(--color-text-muted);
-  font-weight: 700;
+  font-size: 0.9375rem;
+  font-weight: 600;
   text-decoration: none;
+  transition: all var(--transition-fast);
 }
 
-.nav-item:hover,
+.nav-item:hover {
+  background: #f1f5f9;
+  color: var(--color-text);
+}
+
 .nav-item.is-active,
+.nav-item.active,
 .nav-item[aria-current="page"] {
   background: var(--color-primary-soft);
   color: var(--color-primary);
+  font-weight: 700;
 }
 
-.dashboard-main {
-  min-width: 0;
+.nav-item .nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  opacity: 0.8;
 }
+
+.nav-item.is-active .nav-icon,
+.nav-item.active .nav-icon {
+  opacity: 1;
+  color: var(--color-primary);
+}
+
+.nav-item-logout:hover {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.nav-item-logout:hover .nav-icon {
+  color: var(--color-danger);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+/* ========================================================
+   3. Dashboard Header
+   ======================================================== */
 
 .dashboard-header {
-  height: var(--header-height);
+  height: 80px;
+  min-height: 80px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -59,27 +165,148 @@
   padding: 0 var(--space-8);
 }
 
-.dashboard-header h1 {
+.dashboard-header-title h1 {
   margin: 0;
-  font-size: var(--font-size-xl);
+  font-size: 1.625rem;
+  font-weight: 800;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.dashboard-header-title .eyebrow {
+  margin: 0 0 2px;
+}
+
+.header-date {
+  margin: 2px 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 500;
 }
 
 .profile-area {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-lg);
 }
 
-.dashboard-content {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: var(--space-8);
+.profile-info {
+  text-align: right;
 }
+
+.profile-name {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.25;
+}
+
+.profile-role {
+  margin: 2px 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  line-height: 1.2;
+}
+
+.header-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: #f1f5f9;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  transition: all var(--transition-fast);
+}
+
+.header-action-btn:hover {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-color: #cbd5e1;
+}
+
+.header-action-logout:hover {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.profile-avatar {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--color-primary-soft), #e0e7ff);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+/* ========================================================
+   4. Section Headings & Welcome
+   ======================================================== */
+
+.section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-text);
+  line-height: 1.25;
+}
+
+.section-heading p.muted {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.dashboard-welcome {
+  margin-bottom: var(--space-6);
+}
+
+#add-task-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0.625rem 1.25rem;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+  transition: all var(--transition-fast);
+}
+
+#add-task-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+}
+
+/* ========================================================
+   5. Statistics Cards
+   ======================================================== */
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-5);
+  gap: var(--space-6);
   margin-bottom: var(--space-8);
 }
 
@@ -87,32 +314,229 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.stat-card-label {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-  font-weight: 700;
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.stat-card-value {
-  display: block;
-  margin-top: var(--space-2);
-  font-size: var(--font-size-3xl);
-  font-weight: 800;
-  line-height: 1;
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
 }
 
-.section-heading {
+.stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--color-border);
+}
+
+.stat-card-total::before {
+  background: var(--color-primary);
+}
+
+.stat-card-pending::before {
+  background: var(--color-warning);
+}
+
+.stat-card-completed::before {
+  background: var(--color-success);
+}
+
+.stat-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.stat-card-label {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stat-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+}
+
+.stat-card-total .stat-card-icon {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.stat-card-pending .stat-card-icon {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.stat-card-completed .stat-card-icon {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.stat-card-value {
+  margin: 0 0 var(--space-2);
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--color-text);
+  line-height: 1;
+  font-feature-settings: "tnum";
+}
+
+.stat-card-desc {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  line-height: 1.3;
+}
+
+/* ========================================================
+   6. Task Section & Filter Tabs
+   ======================================================== */
+
+.task-section-heading {
+  margin-top: var(--space-8);
   margin-bottom: var(--space-5);
 }
 
-.section-heading h2 {
-  margin: 0;
-  font-size: var(--font-size-2xl);
+.filter-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 4px;
+  background: #eef2f6;
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
+  border: 1px solid var(--color-border);
 }
+
+.filter-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  padding: 0.375rem 1.125rem;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.filter-tab:hover {
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.filter-tab.is-active,
+.filter-tab.active,
+.filter-tab[aria-selected="true"] {
+  border-color: rgba(0, 0, 0, 0.04);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ========================================================
+   7. Empty State
+   ======================================================== */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 340px;
+  border: 2px dashed #cbd5e1;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  padding: var(--space-10) var(--space-6);
+  text-align: center;
+  box-shadow: var(--shadow-card);
+}
+
+.empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.empty-state-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: var(--space-5);
+  box-shadow: 0 0 0 8px #f5f3ff;
+}
+
+.empty-state h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.3;
+}
+
+.empty-state p.muted {
+  margin: 0 0 var(--space-6);
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+#empty-add-task-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0.625rem 1.25rem;
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+  transition: all var(--transition-fast);
+}
+
+#empty-add-task-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+}
+
+/* ========================================================
+   8. Task Grid & Card Helpers (Future Ready)
+   ======================================================== */
 
 .task-grid {
   display: grid;
@@ -184,18 +608,6 @@
 
 .search-input {
   width: min(100%, 360px);
-}
-
-.profile-avatar {
-  display: grid;
-  width: 40px;
-  height: 40px;
-  place-items: center;
-  border-radius: var(--radius-full);
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  font-size: var(--font-size-sm);
-  font-weight: 800;
 }
 
 .analytics-grid {
