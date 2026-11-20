@@ -205,13 +205,33 @@ def create_task(current_user):
             return jsonify({
                 "error": "Invalid 'due_date' format. Please use ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)"
             }), 400
+        # Resolve optional category scoped to authenticated user
+    category_id = None
+    category_raw = data.get("category")
+    category_id_raw = data.get("category_id")
 
-    # Validate optional category_id and verify ownership
-    if category_id is not None:
-        if not isinstance(category_id, int):
+    if category_raw and isinstance(category_raw, str) and category_raw.strip():
+        clean_cat = category_raw.strip()
+        cat_obj = Category.query.filter_by(
+            user_id=current_user.id,
+            name=clean_cat
+        ).first()
+
+        if not cat_obj:
+            cat_obj = Category(user_id=current_user.id, name=clean_cat)
+            db.session.add(cat_obj)
+            db.session.flush()
+
+        category_id = cat_obj.id
+
+    elif category_id_raw is not None:
+        # Validate optional category_id and verify ownership
+        if not isinstance(category_id_raw, int) or isinstance(category_id_raw, bool):
             return jsonify({"error": "'category_id' must be an integer"}), 400
+
         try:
-            category = db.session.get(Category, category_id)
+            category = db.session.get(Category, category_id_raw)
+
         except Exception:
             return jsonify({"error": "Database error while verifying category"}), 500
 
@@ -220,6 +240,8 @@ def create_task(current_user):
 
         if category.user_id != current_user.id:
             return jsonify({"error": "You do not have permission to attach this category"}), 403
+
+        category_id = category.id
 
     # 4. Instantiate Task object bound to authenticated user
     task = Task(
@@ -334,9 +356,30 @@ def update_task(current_user, task_id):
                 return jsonify({
                     "error": "Invalid 'due_date' format. Please use ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)"
                 }), 400
+        # 9. Update category if provided
+    if "category" in data:
+        category_raw = data.get("category")
 
-    # 9. Validate and update 'category_id' if provided
-    if "category_id" in data:
+        if category_raw is None or (
+            isinstance(category_raw, str) and not category_raw.strip()
+        ):
+            task.category_id = None
+
+        elif isinstance(category_raw, str):
+            clean_cat = category_raw.strip()
+            cat_obj = Category.query.filter_by(
+                user_id=current_user.id,
+                name=clean_cat
+            ).first()
+
+            if not cat_obj:
+                cat_obj = Category(user_id=current_user.id, name=clean_cat)
+                db.session.add(cat_obj)
+                db.session.flush()
+
+            task.category_id = cat_obj.id
+
+    elif "category_id" in data:  
         category_id = data.get("category_id")
         if category_id is None or category_id == "":
             task.category_id = None
@@ -398,4 +441,4 @@ def delete_task(current_user, task_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
