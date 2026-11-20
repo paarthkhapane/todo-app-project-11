@@ -22,7 +22,7 @@ app = Flask(__name__)
 # Database configuration loaded from environment variables
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "3306")
-DB_NAME = os.getenv("DB_NAME", "taskdb")
+DB_NAME = os.getenv("DB_NAME", "todo_app")
 DB_USER = os.getenv("DB_USER", "root")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 
@@ -40,7 +40,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = (
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Import db and models from models.py (avoids circular imports)
-from models import db, User, Task
+from models import db, User, Task, Category
 
 # Initialize SQLAlchemy with the Flask app instance
 db.init_app(app)
@@ -53,6 +53,10 @@ from auth import (
     generate_token,
     token_required
 )
+
+# Allowed status and priority values matching database schema
+ALLOWED_STATUSES = {"pending", "in_progress", "completed"}
+ALLOWED_PRIORITIES = {"low", "medium", "high"}
 
 
 # Health check test route
@@ -176,6 +180,21 @@ def create_task(current_user):
     status = data.get("status")
     priority = data.get("priority")
     due_date_raw = data.get("due_date")
+    category_id = data.get("category_id")
+
+    # Validate status against allowed values
+    if status is not None:
+        if status not in ALLOWED_STATUSES:
+            return jsonify({
+                "error": f"Invalid 'status'. Allowed values are: {', '.join(sorted(ALLOWED_STATUSES))}"
+            }), 400
+
+    # Validate priority against allowed values
+    if priority is not None:
+        if priority not in ALLOWED_PRIORITIES:
+            return jsonify({
+                "error": f"Invalid 'priority'. Allowed values are: {', '.join(sorted(ALLOWED_PRIORITIES))}"
+            }), 400
 
     # Parse optional due_date
     due_date = None
@@ -187,9 +206,25 @@ def create_task(current_user):
                 "error": "Invalid 'due_date' format. Please use ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)"
             }), 400
 
+    # Validate optional category_id and verify ownership
+    if category_id is not None:
+        if not isinstance(category_id, int):
+            return jsonify({"error": "'category_id' must be an integer"}), 400
+        try:
+            category = db.session.get(Category, category_id)
+        except Exception:
+            return jsonify({"error": "Database error while verifying category"}), 500
+
+        if not category:
+            return jsonify({"error": "Category not found"}), 404
+
+        if category.user_id != current_user.id:
+            return jsonify({"error": "You do not have permission to attach this category"}), 403
+
     # 4. Instantiate Task object bound to authenticated user
     task = Task(
         user_id=current_user.id,
+        category_id=category_id,
         title=title.strip(),
         description=description,
         status=status if status is not None else "pending",
@@ -269,18 +304,22 @@ def update_task(current_user, task_id):
     if "description" in data:
         task.description = data.get("description")
 
-    # 6. Update 'status' if provided
+    # 6. Validate and update 'status' if provided
     if "status" in data:
         status = data.get("status")
-        if status is not None and not isinstance(status, str):
-            return jsonify({"error": "'status' must be a string"}), 400
+        if status not in ALLOWED_STATUSES:
+            return jsonify({
+                "error": f"Invalid 'status'. Allowed values are: {', '.join(sorted(ALLOWED_STATUSES))}"
+            }), 400
         task.status = status
 
-    # 7. Update 'priority' if provided
+    # 7. Validate and update 'priority' if provided
     if "priority" in data:
         priority = data.get("priority")
-        if priority is not None and not isinstance(priority, str):
-            return jsonify({"error": "'priority' must be a string"}), 400
+        if priority not in ALLOWED_PRIORITIES:
+            return jsonify({
+                "error": f"Invalid 'priority'. Allowed values are: {', '.join(sorted(ALLOWED_PRIORITIES))}"
+            }), 400
         task.priority = priority
 
     # 8. Validate and update 'due_date' if provided
@@ -296,9 +335,33 @@ def update_task(current_user, task_id):
                     "error": "Invalid 'due_date' format. Please use ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)"
                 }), 400
 
+    # 9. Validate and update 'category_id' if provided
+    if "category_id" in data:
+        category_id = data.get("category_id")
+        if category_id is None or category_id == "":
+            task.category_id = None
+        else:
+            if not isinstance(category_id, int):
+                return jsonify({"error": "'category_id' must be an integer"}), 400
+            try:
+                category = db.session.get(Category, category_id)
+            except Exception:
+                return jsonify({"error": "Database error while verifying category"}), 500
+
+            if not category:
+                return jsonify({"error": "Category not found"}), 404
+
+            if category.user_id != current_user.id:
+                return jsonify({"error": "You do not have permission to attach this category"}), 403
+
+            task.category_id = category_id
+
     # user_id is deliberately immutable
 
-    # 9. Commit changes to the database
+    # Update updated_at timestamp
+    task.updated_at = datetime.utcnow()
+
+    # 10. Commit changes to the database
     try:
         db.session.commit()
         return jsonify(task.to_dict()), 200
