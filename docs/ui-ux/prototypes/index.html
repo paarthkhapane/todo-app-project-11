@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FlowTask UI/UX Prototype</title>
+  <link rel="stylesheet" href="../../../frontend/styles/variables.css">
+  <link rel="stylesheet" href="../../../frontend/styles/global.css">
+  <link rel="stylesheet" href="../../../frontend/styles/components.css">
+  <link rel="stylesheet" href="../../../frontend/styles/auth.css">
+  <link rel="stylesheet" href="../../../frontend/styles/dashboard.css">
+  <link rel="stylesheet" href="../../../frontend/styles/responsive.css">
+  <link rel="stylesheet" href="./prototype.css">
+</head>
+<body>
+  <main id="app"></main>
+
+  <template id="auth-template">
+    <section class="auth-shell">
+      <aside class="auth-brand-panel">
+        <div>
+          <div class="prototype-logo">F</div>
+          <h2>FlowTask</h2>
+          <p>Plan clearly. Finish confidently.</p>
+        </div>
+      </aside>
+      <div class="auth-form-panel">
+        <div class="auth-card">
+          <p class="eyebrow" id="auth-eyebrow">WELCOME BACK</p>
+          <h1 id="auth-title">Login to FlowTask</h1>
+          <p class="muted" id="auth-subtitle">Enter your details to open the demo dashboard.</p>
+
+          <form id="auth-form" novalidate>
+            <div class="field" id="name-field" hidden>
+              <label for="full-name">Full Name</label>
+              <input class="input" id="full-name" name="fullName" autocomplete="name" placeholder="Your name">
+              <span class="field-error" id="name-error"></span>
+            </div>
+            <div class="field">
+              <label for="email">Email Address</label>
+              <input class="input" id="email" name="email" type="email" autocomplete="email" placeholder="name@example.com">
+              <span class="field-error" id="email-error"></span>
+            </div>
+            <div class="field password-field">
+              <label for="password">Password</label>
+              <input class="input" id="password" name="password" type="password" autocomplete="current-password" placeholder="At least 8 characters">
+              <button class="password-toggle" type="button" data-password-toggle="password">Show</button>
+              <span class="field-error" id="password-error"></span>
+            </div>
+            <div class="field" id="confirm-field" hidden>
+              <label for="confirm-password">Confirm Password</label>
+              <input class="input" id="confirm-password" type="password" autocomplete="new-password" placeholder="Repeat your password">
+              <button class="password-toggle" type="button" data-password-toggle="confirm-password">Show</button>
+              <span class="field-error" id="confirm-error"></span>
+            </div>
+            <div class="auth-options" id="login-options">
+              <label class="check-label"><input type="checkbox"> Remember me</label>
+              <button class="text-button" type="button">Forgot password?</button>
+            </div>
+            <button class="btn btn-primary auth-submit" id="auth-submit" type="submit">Log In</button>
+          </form>
+          <p class="auth-switch"><span id="auth-switch-copy">New to FlowTask?</span> <button class="text-button" id="auth-switch" type="button">Create an account</button></p>
+          <div class="demo-role-switch">
+            <span>Illustrative demo only:</span>
+            <button class="text-button" type="button" data-login-role="user">Open User dashboard</button>
+            <button class="text-button" type="button" data-login-role="admin">Open Admin dashboard</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <template id="dashboard-template">
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Primary navigation">
+        <div class="sidebar-brand">FlowTask</div>
+        <nav class="sidebar-nav" id="sidebar-nav"></nav>
+      </aside>
+      <div class="dashboard-main">
+        <header class="dashboard-header">
+          <div>
+            <p class="eyebrow" id="header-eyebrow">OVERVIEW</p>
+            <h1 id="header-title">Good morning, Om</h1>
+          </div>
+          <div class="profile-area">
+            <div class="profile-avatar">OV</div>
+            <div>
+              <strong id="profile-name">Om Vithoba</strong>
+              <div class="muted small" id="profile-role">Illustrative User</div>
+            </div>
+          </div>
+        </header>
+        <div class="dashboard-content" id="dashboard-content"></div>
+      </div>
+    </div>
+  </template>
+
+  <div class="modal-backdrop" id="task-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
+      <div class="modal-heading">
+        <div>
+          <p class="eyebrow">TASK DETAILS</p>
+          <h2 id="task-modal-title">Add a task</h2>
+        </div>
+        <button class="icon-button" type="button" data-close-modal aria-label="Close">×</button>
+      </div>
+      <form id="task-form" novalidate>
+        <div class="field">
+          <label for="task-title">Task Title</label>
+          <input class="input" id="task-title" required maxlength="80" placeholder="What needs to be done?">
+        </div>
+        <div class="field">
+          <label for="task-description">Description</label>
+          <textarea class="textarea" id="task-description" maxlength="300" placeholder="Add helpful context"></textarea>
+        </div>
+        <div class="form-columns">
+          <div class="field">
+            <label for="task-priority">Priority</label>
+            <select class="select" id="task-priority">
+              <option>Low</option>
+              <option selected>Medium</option>
+              <option>High</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="task-due">Due Date</label>
+            <input class="input" id="task-due" type="date">
+          </div>
+        </div>
+        <p class="field-error" id="task-error"></p>
+        <div class="form-actions">
+          <button class="btn btn-secondary" type="button" data-close-modal>Cancel</button>
+          <button class="btn btn-primary" id="task-save" type="submit">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="delete-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+      <p class="eyebrow danger-text">DELETE TASK</p>
+      <h2 id="delete-modal-title">Delete this task?</h2>
+      <p class="muted" id="delete-copy">This illustrative action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" type="button" data-close-delete>Cancel</button>
+        <button class="btn btn-danger" type="button" id="confirm-delete">Confirm Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <script src="./app.js"></script>
+</body>
+</html>
