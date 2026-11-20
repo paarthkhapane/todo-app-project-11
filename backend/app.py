@@ -244,6 +244,7 @@ def create_task(current_user):
     status_raw = data.get("status")
     priority_raw = data.get("priority")
     due_date_raw = data.get("due_date")
+    category_id_raw = data.get("category_id")
 
     # Validate status
     if status_raw is not None:
@@ -286,11 +287,22 @@ def create_task(current_user):
             db.session.add(cat_obj)
             db.session.flush()
         category_id = cat_obj.id
-    elif data.get("category_id"):
-        cid = data.get("category_id")
-        cat_obj = db.session.get(Category, cid)
-        if cat_obj and cat_obj.user_id == current_user.id:
-            category_id = cat_obj.id
+    elif category_id_raw is not None:
+        # Validate optional category_id and verify ownership
+        if not isinstance(category_id_raw, int):
+            return jsonify({"error": "'category_id' must be an integer"}), 400
+        try:
+            category = db.session.get(Category, category_id_raw)
+        except Exception:
+            return jsonify({"error": "Database error while verifying category"}), 500
+
+        if not category:
+            return jsonify({"error": "Category not found"}), 404
+
+        if category.user_id != current_user.id:
+            return jsonify({"error": "You do not have permission to attach this category"}), 403
+
+        category_id = category.id
 
     # 4. Instantiate Task object bound to authenticated user
     task = Task(
@@ -375,7 +387,7 @@ def update_task(current_user, task_id):
     if "description" in data:
         task.description = data.get("description")
 
-    # 6. Update 'status' if provided
+    # 6. Validate and update 'status' if provided
     if "status" in data:
         status_raw = data.get("status")
         if status_raw is not None:
@@ -385,7 +397,7 @@ def update_task(current_user, task_id):
                 }), 400
             task.status = status_raw.lower()
 
-    # 7. Update 'priority' if provided
+    # 7. Validate and update 'priority' if provided
     if "priority" in data:
         priority_raw = data.get("priority")
         if priority_raw is not None:
@@ -422,15 +434,29 @@ def update_task(current_user, task_id):
                 db.session.flush()
             task.category_id = cat_obj.id
     elif "category_id" in data:
-        cid = data.get("category_id")
-        if cid is None or cid == "":
+        category_id = data.get("category_id")
+        if category_id is None or category_id == "":
             task.category_id = None
         else:
-            cat_obj = db.session.get(Category, cid)
-            if cat_obj and cat_obj.user_id == current_user.id:
-                task.category_id = cat_obj.id
+            if not isinstance(category_id, int):
+                return jsonify({"error": "'category_id' must be an integer"}), 400
+            try:
+                category = db.session.get(Category, category_id)
+            except Exception:
+                return jsonify({"error": "Database error while verifying category"}), 500
+
+            if not category:
+                return jsonify({"error": "Category not found"}), 404
+
+            if category.user_id != current_user.id:
+                return jsonify({"error": "You do not have permission to attach this category"}), 403
+
+            task.category_id = category_id
 
     # user_id is deliberately immutable
+
+    # Update updated_at timestamp
+    task.updated_at = datetime.utcnow()
 
     # 10. Commit changes to the database
     try:

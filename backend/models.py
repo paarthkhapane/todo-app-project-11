@@ -149,6 +149,7 @@ class Task(db.Model):
     priority = db.Column(db.String(20), nullable=False, default="medium")
     due_date = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
 
     def to_dict(self):
         return {
@@ -162,6 +163,7 @@ class Task(db.Model):
             "priority": self.priority,
             "due_date": self.due_date.isoformat() if self.due_date else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
     def __repr__(self):
