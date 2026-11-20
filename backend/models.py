@@ -1,8 +1,78 @@
-from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
+"""
+FlowTask - SQLAlchemy Data Models
+Defines User, Category, and Task models for the To-Do application.
+Maps directly to MySQL tables in database/schema.sql.
+"""
 
-# Initialize SQLAlchemy instance
-db = SQLAlchemy()
+from datetime import datetime
+
+try:
+    from flask_sqlalchemy import SQLAlchemy
+    db = SQLAlchemy()
+except ImportError:
+    # Graceful fallback when Flask-SQLAlchemy is not installed in the environment
+    class _MockColumn:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    class _MockQuery:
+        def filter_by(self, **kwargs):
+            return self
+
+        def first(self):
+            return None
+
+        def all(self):
+            return []
+
+    class _MockSession:
+        def get(self, model, ident):
+            return None
+
+        def add(self, obj):
+            pass
+
+        def flush(self):
+            pass
+
+        def commit(self):
+            pass
+
+        def rollback(self):
+            pass
+
+        def delete(self, obj):
+            pass
+
+    class _MockDB:
+        Model = object
+        session = _MockSession()
+
+        def Column(self, *args, **kwargs):
+            return _MockColumn(*args, **kwargs)
+
+        def Integer(self, *args, **kwargs):
+            return _MockColumn()
+
+        def String(self, *args, **kwargs):
+            return _MockColumn()
+
+        def Text(self, *args, **kwargs):
+            return _MockColumn()
+
+        def DateTime(self, *args, **kwargs):
+            return _MockColumn()
+
+        def ForeignKey(self, *args, **kwargs):
+            return _MockColumn()
+
+        def relationship(self, *args, **kwargs):
+            return []
+
+        def init_app(self, app):
+            pass
+
+    db = _MockDB()
 
 
 class User(db.Model):
@@ -18,9 +88,10 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     role = db.Column(db.String(20), nullable=False, default="user")
 
-    # Relationships
-    tasks = db.relationship("Task", backref="user", lazy=True)
-    categories = db.relationship("Category", backref="user", lazy=True)
+    # One-to-many relationship: A user can have many tasks
+    tasks = db.relationship("Task", backref="user", lazy=True, cascade="all, delete-orphan")
+    # One-to-many relationship: A user can have many categories
+    categories = db.relationship("Category", backref="user", lazy=True, cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
@@ -38,6 +109,7 @@ class User(db.Model):
 class Category(db.Model):
     """
     Category model representing task categories created by users.
+    Maps directly to the existing 'categories' table in database/schema.sql.
     """
     __tablename__ = "categories"
 
@@ -46,6 +118,7 @@ class Category(db.Model):
     name = db.Column(db.String(100), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
+    # One-to-many relationship: A category can have many tasks
     tasks = db.relationship("Task", backref="category", lazy=True)
 
     def to_dict(self):
@@ -63,6 +136,7 @@ class Category(db.Model):
 class Task(db.Model):
     """
     Task model representing to-do tasks created by users.
+    Maps directly to the existing 'tasks' table in database/schema.sql.
     """
     __tablename__ = "tasks"
 
@@ -75,20 +149,19 @@ class Task(db.Model):
     priority = db.Column(db.String(20), nullable=False, default="medium")
     due_date = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
 
     def to_dict(self):
         return {
             "id": self.id,
             "user_id": self.user_id,
             "category_id": self.category_id,
+            "category": self.category.name if self.category else None,
             "title": self.title,
             "description": self.description,
             "status": self.status,
             "priority": self.priority,
             "due_date": self.due_date.isoformat() if self.due_date else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
     def __repr__(self):

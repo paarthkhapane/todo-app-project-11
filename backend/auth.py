@@ -1,19 +1,40 @@
+"""
+FlowTask - Authentication & JWT Middleware
+Handles password hashing, JWT generation/verification, and route protection.
+"""
+
 import os
+import sys
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
-from dotenv import load_dotenv
 from flask import jsonify, request
-import jwt
 from werkzeug.security import check_password_hash, generate_password_hash
 
-# Ensure root .env is loaded
-ROOT_DIR = Path(__file__).resolve().parent.parent
-dotenv_path = ROOT_DIR / ".env"
-load_dotenv(dotenv_path=dotenv_path)
+# Ensure backend directory is in sys.path
+BACKEND_DIR = Path(__file__).resolve().parent
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
 
-# Import models and db (no circular dependency because models.py does not import auth.py)
-from models import db, User
+# Ensure root .env is loaded
+ROOT_DIR = BACKEND_DIR.parent
+dotenv_path = ROOT_DIR / ".env"
+try:
+    from dotenv import load_dotenv
+    load_dotenv(dotenv_path=dotenv_path)
+except ImportError:
+    pass
+
+try:
+    import jwt
+except ImportError:
+    jwt = None
+
+# Import models and db (handles both backend directory and package imports)
+try:
+    from models import db, User
+except ImportError:
+    from backend.models import db, User
 
 
 def get_jwt_secret_key():
@@ -43,6 +64,8 @@ def generate_token(user_id, role, expires_in_hours=24):
     """
     Generate a signed JWT token containing user_id, role, and expiration timestamp.
     """
+    if jwt is None:
+        raise RuntimeError("PyJWT is not installed. Please run 'pip install -r requirements.txt'.")
     secret = get_jwt_secret_key()
     payload = {
         "user_id": user_id,
@@ -57,6 +80,8 @@ def decode_token(token):
     Decode and verify a JWT token.
     Raises jwt.ExpiredSignatureError, jwt.InvalidTokenError, or ValueError.
     """
+    if jwt is None:
+        raise RuntimeError("PyJWT is not installed. Please run 'pip install -r requirements.txt'.")
     secret = get_jwt_secret_key()
     return jwt.decode(token, secret, algorithms=["HS256"])
 
@@ -69,6 +94,11 @@ def token_required(f):
     """
     @wraps(f)
     def decorated(*args, **kwargs):
+        if jwt is None:
+            return jsonify({
+                "error": "PyJWT is not installed on the server. Please run 'pip install -r requirements.txt'."
+            }), 500
+
         auth_header = request.headers.get("Authorization")
         if not auth_header:
             return jsonify({"error": "Authorization header is missing"}), 401
@@ -97,6 +127,30 @@ def token_required(f):
 
         if not current_user:
             return jsonify({"error": "User not found or no longer active"}), 401
+
+        return f(current_user, *args, **kwargs)
+
+    return decorated
+
+
+def admin_required(f):
+    """
+    Decorator to protect routes requiring administrator privileges.
+    Must be stacked after @token_required:
+        @app.route(...)
+        @token_required
+        @admin_required
+        def admin_view(current_user):
+            ...
+    Verifies that the authenticated current_user has role == 'admin'.
+    Returns 403 Forbidden if the user is not an administrator.
+    """
+    @wraps(f)
+    def decorated(current_user, *args, **kwargs):
+        if not current_user or getattr(current_user, "role", None) != "admin":
+            return jsonify({
+                "error": "Access forbidden: administrator privileges required"
+            }), 403
 
         return f(current_user, *args, **kwargs)
 
