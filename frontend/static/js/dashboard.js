@@ -1,15 +1,68 @@
 /**
- * FlowTask - Dashboard & Task Management Frontend Foundation (Phase 2A)
- * Manages task display rendering, filter switching, Add/Edit modal,
- * Delete confirmation modal, accessible UI states, and responsive controls.
+ * FlowTask - Dashboard & Task Management (Phase 2B Step 3)
+ * Manages live task data fetching, Add/Edit task persistence via REST API,
+ * status toggling, deletion confirmation, filtering, statistics, and auth guard.
  */
 
 document.addEventListener("DOMContentLoaded", function () {
 
     // ========================================================
-    // 1. In-Memory State & Context
+    // 0. Authentication Guard & User Profile
     // ========================================================
-    // Tasks array is unpopulated by default for honest Phase 2A presentation
+    const auth = window.FlowAuth;
+    if (!window.__FLOWTASK_DISABLE_AUTH_GUARD__) {
+        if (!auth || !auth.isAuthenticated()) {
+            if (window.location && window.location.replace) {
+                window.location.replace("/login");
+            }
+            return;
+        }
+    }
+
+    // Populate user profile in header if authenticated
+    if (auth && auth.isAuthenticated()) {
+        const currentUser = auth.getUser();
+        if (currentUser) {
+            const userNameEl = document.getElementById("user-name");
+            const welcomeNameEl = document.getElementById("welcome-name");
+            const avatarEl = document.querySelector(".profile-avatar");
+            const roleDisplayEl = document.getElementById("user-role-display");
+            const adminLinkEl = document.getElementById("nav-admin-link");
+            const displayName = currentUser.name || "User";
+
+            if (userNameEl) userNameEl.textContent = displayName;
+            if (welcomeNameEl) welcomeNameEl.textContent = displayName;
+            if (avatarEl) avatarEl.textContent = displayName.charAt(0).toUpperCase();
+
+            if (currentUser.role === "admin") {
+                if (roleDisplayEl) roleDisplayEl.textContent = "Administrator";
+                if (adminLinkEl) adminLinkEl.hidden = false;
+            }
+        }
+    }
+
+    // Wire Logout Handlers
+    const logoutElements = document.querySelectorAll(
+        ".nav-item-logout, .header-action-logout, #sidebar-logout, #mobile-logout"
+    );
+    logoutElements.forEach(function (el) {
+        el.addEventListener("click", function (event) {
+            event.preventDefault();
+            if (window.FlowAuth) {
+                window.FlowAuth.logout("/login");
+            } else {
+                try {
+                    localStorage.removeItem("flowtask_token");
+                    localStorage.removeItem("flowtask_user");
+                } catch (e) {}
+                window.location.href = "/login";
+            }
+        });
+    });
+
+    // ========================================================
+    // 1. In-Memory State & API Helpers
+    // ========================================================
     let tasks = [];
     let currentFilter = "all"; // "all" | "pending" | "completed"
     let activeEditingTaskId = null;
@@ -39,6 +92,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const taskTitleInput = document.getElementById("task-title");
     const taskDescInput = document.getElementById("task-description");
     const taskPriorityInput = document.getElementById("task-priority");
+    const taskCategoryInput = document.getElementById("task-category");
     const taskDateInput = document.getElementById("task-due-date");
     const taskModalFeedback = document.getElementById("task-modal-feedback");
     const saveTaskBtn = document.getElementById("save-task-btn");
@@ -54,6 +108,41 @@ document.addEventListener("DOMContentLoaded", function () {
     const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
     const closeDeleteModalBtn = document.getElementById("close-delete-modal");
     const cancelDeleteModalBtn = document.getElementById("cancel-delete-modal");
+
+    /**
+     * Authenticated API request helper.
+     * Attaches JWT Bearer token and redirects to /login on 401 Unauthorized.
+     */
+    async function apiRequest(endpoint, options = {}) {
+        const token = window.FlowAuth ? window.FlowAuth.getToken() : null;
+        const headers = {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+            ...(options.headers || {})
+        };
+
+        const response = await fetch(endpoint, {
+            ...options,
+            headers: headers
+        });
+
+        if (response.status === 401) {
+            if (window.FlowAuth) {
+                window.FlowAuth.logout("/login");
+            } else {
+                try {
+                    localStorage.removeItem("flowtask_token");
+                    localStorage.removeItem("flowtask_user");
+                } catch (e) {}
+                if (window.location && window.location.replace) {
+                    window.location.replace("/login");
+                }
+            }
+            throw new Error("Unauthorized - session expired");
+        }
+
+        return response;
+    }
 
     // ========================================================
     // 2. Date & Formatting Helpers
@@ -126,6 +215,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <p class="task-card-desc">${escapeHtml(task.description || "No description provided.")}</p>
                 <div class="task-card-meta">
                     <span class="due-date">📅 Due ${escapeHtml(formattedDate)}</span>
+                    ${task.category ? `<span class="badge-category" title="Category: ${escapeHtml(task.category)}">🏷️ ${escapeHtml(task.category)}</span>` : ""}
                 </div>
                 <div class="task-card-actions">
                     <button type="button" class="btn btn-secondary btn-sm" data-action="toggle-status" data-task-id="${escapeHtml(String(task.id))}">
@@ -146,13 +236,6 @@ document.addEventListener("DOMContentLoaded", function () {
      * Updates statistics cards based on the current tasks in memory
      */
     function updateStatistics() {
-        if (tasks.length === 0) {
-            if (totalTasksEl) totalTasksEl.textContent = "--";
-            if (pendingTasksEl) pendingTasksEl.textContent = "--";
-            if (completedTasksEl) completedTasksEl.textContent = "--";
-            return;
-        }
-
         const total = tasks.length;
         const pending = tasks.filter(function (t) {
             return String(t.status || "pending").toLowerCase() === "pending";
@@ -172,7 +255,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function renderTaskView() {
         if (!taskContainer) return;
 
-        // If no tasks exist in memory, show the honest empty / not-connected state
+        // If no tasks exist in memory, show the context-specific empty state
         if (tasks.length === 0) {
             if (currentFilter === "pending") {
                 taskContainer.innerHTML = `
@@ -217,14 +300,11 @@ document.addEventListener("DOMContentLoaded", function () {
                             </div>
                             <h3>Your tasks will appear here</h3>
                             <p class="muted">
-                                Once your tasks are loaded from the backend, you can manage, filter, and track them from this dashboard.
+                                Plan your day, organize your schedule, and track progress right from this dashboard.
                             </p>
                             <button class="btn btn-primary" id="empty-add-task-btn" data-action="add-task" type="button">
                                 + Create Your First Task
                             </button>
-                            <div class="state-badge-notice">
-                                <span class="badge badge-info">Backend Integration Pending (Phase 2B)</span>
-                            </div>
                         </div>
                     </div>
                 `;
@@ -292,7 +372,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         <span>⚠️</span>
                     </div>
                     <h3>Unable to load tasks</h3>
-                    <p class="muted">${escapeHtml(errorMessage || "A connection error occurred. Backend service is not yet available.")}</p>
+                    <p class="muted">${escapeHtml(errorMessage || "A connection error occurred while loading your tasks.")}</p>
                     <button class="btn btn-secondary" data-action="retry-tasks" type="button">
                         Retry Connection
                     </button>
@@ -320,7 +400,35 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // ========================================================
-    // 5. Filter Handling
+    // 5. Live Backend Data Fetching
+    // ========================================================
+    async function fetchTasks() {
+        renderLoadingState();
+        try {
+            const response = await apiRequest("/api/tasks", { method: "GET" });
+            if (!response.ok) {
+                let errorData = {};
+                try {
+                    errorData = await response.json();
+                } catch (e) {}
+                renderErrorState(errorData.error || "Unable to load tasks from server.");
+                return;
+            }
+
+            const data = await response.json();
+            tasks = Array.isArray(data) ? data : [];
+            renderTaskView();
+            updateStatistics();
+        } catch (err) {
+            if (err.message && err.message.includes("Unauthorized")) {
+                return; // Handled by apiRequest redirect
+            }
+            renderErrorState("Unable to connect to task service. Please check your network connection.");
+        }
+    }
+
+    // ========================================================
+    // 6. Filter Handling
     // ========================================================
     function setFilter(newFilter) {
         currentFilter = newFilter;
@@ -356,7 +464,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // ========================================================
-    // 6. Add & Edit Task Modal
+    // 7. Add & Edit Task Modal
     // ========================================================
     function clearModalErrors() {
         const titleError = document.getElementById("task-title-error");
@@ -373,6 +481,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (taskModalFeedback) {
             taskModalFeedback.hidden = true;
             taskModalFeedback.textContent = "";
+            taskModalFeedback.className = "auth-feedback";
         }
     }
 
@@ -393,6 +502,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (taskTitleInput) taskTitleInput.value = task.title || "";
             if (taskDescInput) taskDescInput.value = task.description || "";
             if (taskPriorityInput) taskPriorityInput.value = (task.priority || "medium").toLowerCase();
+            if (taskCategoryInput) taskCategoryInput.value = task.category || "";
             if (taskDateInput) taskDateInput.value = task.due_date ? String(task.due_date).substring(0, 10) : "";
         } else {
             activeEditingTaskId = null;
@@ -402,6 +512,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (saveTaskBtn) saveTaskBtn.textContent = "Save Task";
 
             if (taskForm) taskForm.reset();
+            if (taskCategoryInput) taskCategoryInput.value = "";
         }
 
         taskModal.hidden = false;
@@ -452,14 +563,17 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Form Submission & Validation
+    // Form Submission & Validation with live API integration
     if (taskForm) {
-        taskForm.addEventListener("submit", function (event) {
+        taskForm.addEventListener("submit", async function (event) {
             event.preventDefault();
             clearModalErrors();
 
             const title = taskTitleInput ? taskTitleInput.value.trim() : "";
             const dueDate = taskDateInput ? taskDateInput.value : "";
+            const description = taskDescInput ? taskDescInput.value.trim() : "";
+            const priority = taskPriorityInput ? taskPriorityInput.value : "medium";
+            const category = taskCategoryInput ? taskCategoryInput.value.trim() : "";
 
             let isValid = true;
             let firstInvalid = null;
@@ -485,30 +599,90 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            // Simulated feedback state for Phase 2A (No fake persistence)
+            // Prepare payload
+            const payload = {
+                title: title,
+                description: description,
+                priority: priority,
+                due_date: dueDate,
+                category: category
+            };
+
+            const originalBtnText = saveTaskBtn ? saveTaskBtn.textContent : "Save Task";
             if (saveTaskBtn) {
-                const originalText = saveTaskBtn.textContent;
                 saveTaskBtn.disabled = true;
                 saveTaskBtn.textContent = activeEditingTaskId ? "Saving changes..." : "Saving task...";
+            }
 
-                setTimeout(function () {
-                    saveTaskBtn.disabled = false;
-                    saveTaskBtn.textContent = originalText;
+            try {
+                if (activeEditingTaskId) {
+                    // Update existing task via PUT
+                    const response = await apiRequest(`/api/tasks/${activeEditingTaskId}`, {
+                        method: "PUT",
+                        body: JSON.stringify(payload)
+                    });
 
-                    if (taskModalFeedback) {
-                        taskModalFeedback.hidden = false;
-                        taskModalFeedback.className = "auth-feedback feedback-info";
-                        taskModalFeedback.textContent = activeEditingTaskId
-                            ? "Form validated. Note: Backend API is not yet connected in Phase 2A. Task updates will be permanently saved once the backend is integrated."
-                            : "Form validated. Note: Backend API is not yet connected in Phase 2A. Task saving will be connected to the backend in Phase 2B.";
+                    if (response.ok) {
+                        const updatedTask = await response.json();
+                        const idx = tasks.findIndex(function (t) {
+                            return String(t.id) === String(activeEditingTaskId);
+                        });
+                        if (idx !== -1) {
+                            tasks[idx] = updatedTask;
+                        }
+                        closeTaskModal();
+                        renderTaskView();
+                        updateStatistics();
+                    } else {
+                        const errData = await response.json().catch(function () { return {}; });
+                        if (taskModalFeedback) {
+                            taskModalFeedback.hidden = false;
+                            taskModalFeedback.className = "auth-feedback feedback-error";
+                            taskModalFeedback.textContent = errData.error || "Failed to update task. Please try again.";
+                        }
                     }
-                }, 400);
+                } else {
+                    // Create new task via POST
+                    const response = await apiRequest("/api/tasks", {
+                        method: "POST",
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.status === 201) {
+                        const newTask = await response.json();
+                        tasks.unshift(newTask);
+                        closeTaskModal();
+                        renderTaskView();
+                        updateStatistics();
+                    } else {
+                        const errData = await response.json().catch(function () { return {}; });
+                        if (taskModalFeedback) {
+                            taskModalFeedback.hidden = false;
+                            taskModalFeedback.className = "auth-feedback feedback-error";
+                            taskModalFeedback.textContent = errData.error || "Failed to create task. Please try again.";
+                        }
+                    }
+                }
+            } catch (err) {
+                if (err.message && err.message.includes("Unauthorized")) {
+                    return; // Handled by apiRequest redirect
+                }
+                if (taskModalFeedback) {
+                    taskModalFeedback.hidden = false;
+                    taskModalFeedback.className = "auth-feedback feedback-error";
+                    taskModalFeedback.textContent = "Network error: Unable to save task. Please check your connection.";
+                }
+            } finally {
+                if (saveTaskBtn) {
+                    saveTaskBtn.disabled = false;
+                    saveTaskBtn.textContent = originalBtnText;
+                }
             }
         });
     }
 
     // ========================================================
-    // 7. Delete Confirmation Modal
+    // 8. Delete Confirmation Modal
     // ========================================================
     function openDeleteModal(task) {
         if (!deleteModal) return;
@@ -528,6 +702,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (deleteModalFeedback) {
             deleteModalFeedback.hidden = true;
             deleteModalFeedback.textContent = "";
+            deleteModalFeedback.className = "auth-feedback";
         }
 
         if (confirmDeleteBtn) {
@@ -553,6 +728,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (deleteModalFeedback) {
             deleteModalFeedback.hidden = true;
             deleteModalFeedback.textContent = "";
+            deleteModalFeedback.className = "auth-feedback";
         }
 
         if (lastFocusedElement && lastFocusedElement.focus) {
@@ -577,21 +753,46 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (confirmDeleteBtn) {
-        confirmDeleteBtn.addEventListener("click", function () {
+        confirmDeleteBtn.addEventListener("click", async function () {
+            if (!activeDeletingTaskId) return;
+
             confirmDeleteBtn.disabled = true;
             confirmDeleteBtn.textContent = "Deleting...";
 
-            setTimeout(function () {
-                confirmDeleteBtn.disabled = false;
-                confirmDeleteBtn.textContent = "Confirm Delete";
+            try {
+                const response = await apiRequest(`/api/tasks/${activeDeletingTaskId}`, {
+                    method: "DELETE"
+                });
 
+                if (response.ok) {
+                    tasks = tasks.filter(function (t) {
+                        return String(t.id) !== String(activeDeletingTaskId);
+                    });
+                    closeDeleteModal();
+                    renderTaskView();
+                    updateStatistics();
+                } else {
+                    const errData = await response.json().catch(function () { return {}; });
+                    if (deleteModalFeedback) {
+                        deleteModalFeedback.hidden = false;
+                        deleteModalFeedback.className = "auth-feedback feedback-error";
+                        deleteModalFeedback.textContent = errData.error || "Failed to delete task.";
+                    }
+                    confirmDeleteBtn.disabled = false;
+                    confirmDeleteBtn.textContent = "Confirm Delete";
+                }
+            } catch (err) {
+                if (err.message && err.message.includes("Unauthorized")) {
+                    return; // Handled by apiRequest redirect
+                }
                 if (deleteModalFeedback) {
                     deleteModalFeedback.hidden = false;
-                    deleteModalFeedback.className = "auth-feedback feedback-warning";
-                    deleteModalFeedback.textContent =
-                        "Action confirmed. Note: Backend API is not yet connected in Phase 2A. Task deletion will be permanently executed when the API is wired up.";
+                    deleteModalFeedback.className = "auth-feedback feedback-error";
+                    deleteModalFeedback.textContent = "Network error: Unable to delete task. Please check your connection.";
                 }
-            }, 400);
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.textContent = "Confirm Delete";
+            }
         });
     }
 
@@ -607,10 +808,10 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // ========================================================
-    // 8. Event Delegation on Task Container
+    // 9. Event Delegation on Task Container
     // ========================================================
     if (taskContainer) {
-        taskContainer.addEventListener("click", function (event) {
+        taskContainer.addEventListener("click", async function (event) {
             const target = event.target.closest("button");
             if (!target) return;
 
@@ -622,8 +823,7 @@ document.addEventListener("DOMContentLoaded", function () {
             } else if (action === "filter-all") {
                 setFilter("all");
             } else if (action === "retry-tasks") {
-                renderLoadingState();
-                setTimeout(renderTaskView, 400);
+                fetchTasks();
             } else if (action === "edit" && taskId) {
                 const task = tasks.find(function (t) {
                     return String(t.id) === String(taskId);
@@ -637,17 +837,57 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
                 openDeleteModal(task || { id: taskId, title: "Selected Task" });
             } else if (action === "toggle-status" && taskId) {
-                alert("Task status toggling will be connected to the backend API in Phase 2B.");
+                const task = tasks.find(function (t) {
+                    return String(t.id) === String(taskId);
+                });
+                if (!task) return;
+
+                const currentStatus = String(task.status || "pending").toLowerCase();
+                const newStatus = currentStatus === "completed" ? "pending" : "completed";
+                const originalText = target.textContent;
+
+                target.disabled = true;
+                target.textContent = "...";
+
+                try {
+                    const response = await apiRequest(`/api/tasks/${taskId}`, {
+                        method: "PUT",
+                        body: JSON.stringify({ status: newStatus })
+                    });
+
+                    if (response.ok) {
+                        const updated = await response.json();
+                        task.status = updated.status || newStatus;
+                        renderTaskView();
+                        updateStatistics();
+                    } else {
+                        const errData = await response.json().catch(function () { return {}; });
+                        alert(errData.error || "Failed to update task status.");
+                        target.disabled = false;
+                        target.textContent = originalText;
+                    }
+                } catch (err) {
+                    if (!err.message || !err.message.includes("Unauthorized")) {
+                        alert("Network error: Unable to update task status.");
+                        target.disabled = false;
+                        target.textContent = originalText;
+                    }
+                }
             }
         });
     }
 
     // ========================================================
-    // 9. Initial Render & Clean Integration API
+    // 10. Initial Live Data Load & Public Interface
     // ========================================================
-    renderTaskView();
+    // If auth guard was bypassed for testing, only fetch if authenticated
+    if (!window.__FLOWTASK_DISABLE_AUTH_GUARD__ || (auth && auth.isAuthenticated())) {
+        fetchTasks();
+    } else {
+        renderTaskView();
+    }
 
-    // Expose programmatic test and Phase 2B integration interface
+    // Expose programmatic test and integration interface
     window.FlowTask = {
         getTasks: function () {
             return tasks;
@@ -657,6 +897,7 @@ document.addEventListener("DOMContentLoaded", function () {
             renderTaskView();
             updateStatistics();
         },
+        fetchTasks: fetchTasks,
         setFilter: setFilter,
         openTaskModal: openTaskModal,
         closeTaskModal: closeTaskModal,

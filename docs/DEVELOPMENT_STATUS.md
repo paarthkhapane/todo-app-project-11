@@ -1,94 +1,38 @@
 # FlowTask Development Status
 
-Status is based on the repository inspected on 2026-11-20, branch `feature/frontend`. A product requirement is not marked complete unless implementation is present in this checkout.
+Status updated on 2026-11-20, branch `feature/frontend` following **Phase 3 (Complete Admin Dashboard Implementation)**.
 
 ## Completed
 
-- Frontend project structure with Jinja templates and static CSS/JavaScript.
-- Shared base template and existing indigo/purple design system.
-- Registration page visual form with name, email, password, and confirmation fields.
-- Public registration UI does not expose an admin role selector.
-- User dashboard visual shell with sidebar, header, profile placeholder, statistics cards, filters, and empty task state.
-- Add Task modal UI.
-- Client-side Add Task modal open/close interactions.
-- Client-side required title and due-date validation.
-- Responsive layouts and mobile sidebar spacing fixes in the current frontend checkpoint.
-- Flask preview routes for `/`, `/login`, and `/register`.
+- **Frontend Foundation & User Dashboard (Phase 1 & 2A)**:
+  - Shared Jinja base template, responsive layouts (desktop, tablet, mobile), indigo/purple design system.
+  - Registration and Login forms with RFC 5322 email validation, password visibility toggles, loading indicators.
+  - User Task Dashboard with statistics cards, status filtering tabs, Add/Edit task modal, and delete confirmation modal.
+  - Task category integration: optional category input, automatic user-scoped category creation/reuse, and card category badges.
+- **Backend & Database Architecture (Phase 2B)**:
+  - Unified Flask application (`backend/app.py`) serving both Jinja frontend views and RESTful JSON APIs.
+  - PyMySQL + SQLAlchemy models (`backend/models.py`) mapping to `users`, `categories`, `tasks`.
+  - JWT Bearer authentication middleware (`backend/auth.py`) with `@token_required` and `@admin_required`.
+  - Full Task CRUD endpoints with user ownership isolation (403 Forbidden on unauthorized task access).
+  - Clean error handling with consistent JSON payloads and HTTP status codes.
+- **Administrator Management & Console (Phase 3)**:
+  - Secure CLI admin provisioning utility (`backend/create_admin.py`) for creating or promoting administrator accounts.
+  - Strict server-side authorization: regular users receive 403 Forbidden across all admin endpoints.
+  - System Overview API (`GET /api/admin/stats`): Real database KPI metrics, priority distribution, and recent registrations.
+  - User Management API (`GET /api/admin/users`, `DELETE /api/admin/users/<id>`): Search, role filter, task counters, and self-deletion safeguard.
+  - Cross-Workspace Task Management API (`GET /api/admin/tasks`, `PUT /api/admin/tasks/<id>`, `DELETE /api/admin/tasks/<id>`): Search, status/priority filtering, task moderation, and admin deletion.
+  - Admin Dashboard UI (`frontend/templates/admin/dashboard.html`, `frontend/static/css/admin.css`, `frontend/static/js/admin.js`): Responsive multi-tab interface with live search, filters, modals, and seamless navigation between Admin Console and User Workspace.
+- **Verification & Test Coverage**:
+  - Live MySQL integration test suite (57 Phase 3 test cases + 35 Phase 2B regression test cases = 92 automated assertions passing).
+  - Database cleaned up post-test (0 lingering records).
 
 ## In progress
 
-- Frontend prototype integration with the future Flask API.
-- Authentication page implementation and backend wiring.
-- Task dashboard data rendering.
-- Product test execution.
+- Final End-to-End browser demonstration and team handoff.
 
-These are development areas represented by the current UI or project requirements; no backend implementation is present yet.
+## Ready for next phase
 
-## Not implemented
-
-- Login form UI and login submission.
-- Registration submission, account creation, and duplicate-email handling.
-- Logout and protected-route behavior.
-- JWT or session authentication.
-- Backend API routes.
-- MySQL schema, migrations, models, or connections.
-- Loading tasks from a server.
-- Saving tasks to a server.
-- Editing tasks.
-- Deleting tasks.
-- Completing or reopening tasks.
-- Real task filtering.
-- Real task statistics.
-- Search and sorting.
-- Admin dashboard.
-- Admin user management.
-- Admin task management.
-- Automated frontend/backend tests.
-
-## Blocked by backend
-
-- Registration and login integration.
-- Authentication state and protected dashboard access.
-- Logout behavior.
-- Task CRUD and status operations.
-- Server-side task filtering, search, sorting, and statistics.
-- User/task ownership enforcement.
-- Admin role and permission enforcement.
-
-The exact routes, authentication mechanism, payloads, response shapes, and error codes are not available in this checkout.
-
-## Blocked by database
-
-- User persistence.
-- Password and role persistence.
-- Task persistence.
-- Task-to-user relationships and ownership constraints.
-- Duplicate-email constraints.
-- Task status, priority, and due-date constraints.
-- Admin/user/task data needed for management views.
-
-No database schema or migration files are present.
-
-## Needs testing
-
-All cases in [Test_Cases.md](./Test_Cases.md) are marked `Pending`, including:
-
-- Registration and login scenarios.
-- Logout and protected access.
-- Add, view, edit, complete, reopen, and delete task scenarios.
-- Persistence after refresh.
-- Search, filtering, and sorting.
-- User data isolation.
-- Desktop/mobile responsive behavior.
-
-The current frontend interaction layer should receive focused browser tests for registration/login UI once those pages are implemented, dashboard rendering once API data exists, and the Add Task modal behavior already present.
-
-## Risks and dependencies
-
-- The project request references JWT and MySQL, but neither is verified in source.
-- The empty login template means the preview cannot demonstrate authentication.
-- The preview dashboard is publicly reachable and must not be treated as a protected production route.
-- Frontend API work depends on a stable backend contract.
-- Admin work depends on verified roles, authorization rules, and database relationships.
-- No dependency or build manifest is available, so reproducible automated validation is not yet configured.
+- The FlowTask application is fully implemented across both regular user and administrator roles.
+- All core product requirements (authentication, user dashboard, task CRUD, categories, admin overview, user management, task moderation, and database persistence) are verified against live MySQL 8.0.
+- The project is ready for final end-to-end testing, review, and demonstration.
 

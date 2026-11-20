@@ -1,89 +1,172 @@
 # FlowTask API Contract
 
-## Contract status
+Verified application API contract implemented in `backend/app.py` and guarded via `backend/auth.py`.
 
-No application API is implemented in the inspected repository. The only Flask routes are page-rendering routes in `frontend/preview_app.py`. There are no backend source files, API blueprints, database models, or route tests from which to derive a JSON API contract.
+## Authentication Header
+All protected endpoints require the JWT token passed in the `Authorization` header:
+```
+Authorization: Bearer <token>
+```
 
-Do not implement frontend API calls based on the historical endpoint names in project discussions until backend source or an agreed contract is available.
+---
 
-## Verified Flask routes
+## 1. Page Routes
 
-### `GET /`
+| Route | Method | Access | Template | Description |
+|---|---|---|---|---|
+| `/` | GET | Public Shell / Client Guard | `frontend/templates/user/dashboard.html` | User task management workspace |
+| `/login` | GET | Public | `frontend/templates/login.html` | Authentication login page |
+| `/register` | GET | Public | `frontend/templates/register.html` | Authentication registration page |
+| `/admin` | GET | Admin / Client Guard | `frontend/templates/admin/dashboard.html` | Administrator management console |
 
-- Authentication: **NOT IMPLEMENTED**. The preview route has no guard.
-- Request payload: none.
-- Behavior: renders `templates/user/dashboard.html`.
-- Response format: HTML document, not JSON.
-- Validation: none in the route.
-- Errors: no application-specific errors are defined.
-- Authorization/ownership: none.
+---
 
-### `GET /login`
+## 2. Public Authentication Endpoints
 
-- Authentication: **NOT IMPLEMENTED**.
-- Request payload: none.
-- Behavior: renders `templates/login.html`.
-- Response format: HTML document. The current template is empty.
-- Validation: none in the route.
-- Errors: no application-specific errors are defined.
-- Authorization/ownership: none.
+### `POST /api/auth/register`
+- **Access**: Public
+- **Request Payload**:
+  ```json
+  {
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "password": "SecurePassword123!"
+  }
+  ```
+- **Responses**:
+  - `201 Created`: `{"message": "User registered successfully", "user": {"id": 1, "name": "Jane Doe", "email": "jane@example.com", "role": "user", "created_at": "..."}}`
+  - `400 Bad Request`: `{"error": "<validation error message>"}`
+  - `409 Conflict`: `{"error": "Email is already registered"}`
 
-### `GET /register`
+### `POST /api/auth/login`
+- **Access**: Public
+- **Request Payload**:
+  ```json
+  {
+    "email": "jane@example.com",
+    "password": "SecurePassword123!"
+  }
+  ```
+- **Responses**:
+  - `200 OK`: `{"token": "<jwt_string>", "user": {"id": 1, "name": "Jane Doe", "email": "jane@example.com", "role": "user", "created_at": "..."}}`
+  - `401 Unauthorized`: `{"error": "Invalid email or password"}`
 
-- Authentication: **NOT IMPLEMENTED**.
-- Request payload: none.
-- Behavior: renders `templates/register.html`.
-- Response format: HTML document containing a client-only registration form.
-- Validation: none in the route.
-- Errors: no application-specific errors are defined.
-- Authorization/ownership: none.
+---
 
-## API endpoints
+## 3. Protected User Task Endpoints
 
-The following application endpoints are **NOT IMPLEMENTED and therefore UNKNOWN**:
+### `GET /api/tasks`
+- **Access**: Authenticated User (`@token_required`)
+- **Responses**:
+  - `200 OK`: Array of task objects belonging to the authenticated user.
+  - `401 Unauthorized`: `{"error": "Authorization header is missing" | "Invalid token"}`
 
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `GET /api/tasks`
-- `POST /api/tasks`
-- `PUT /api/tasks/<task_id>`
-- Any task delete, complete, reopen, statistics, user-management, or admin endpoints.
+### `POST /api/tasks`
+- **Access**: Authenticated User (`@token_required`)
+- **Request Payload**:
+  ```json
+  {
+    "title": "Prepare Sprint Demo",
+    "description": "Slide deck and setup",
+    "priority": "high",
+    "due_date": "2026-11-25T14:00:00",
+    "category": "Work"
+  }
+  ```
+- **Responses**:
+  - `201 Created`: Created task object with `category_id` and `category` resolved.
+  - `400 Bad Request`: `{"error": "'title' is required and cannot be empty"}`
 
-For these endpoints, the following contract fields are unknown:
+### `GET /api/tasks/<int:task_id>`
+- **Access**: Authenticated Owner (`@token_required`)
+- **Responses**:
+  - `200 OK`: Task object
+  - `403 Forbidden`: `{"error": "You do not have permission to access this task"}`
+  - `404 Not Found`: `{"error": "Task not found"}`
 
-- HTTP method and exact URL beyond the historical references above.
-- Authentication header, token type, or session mechanism.
-- Request payload field names and types.
-- Success status codes.
-- Response payload shape.
-- Validation rules.
-- Error status codes and error payloads.
-- Task ownership enforcement.
-- Admin authorization.
+### `PUT /api/tasks/<int:task_id>`
+- **Access**: Authenticated Owner (`@token_required`)
+- **Request Payload**: Partial task fields (`title`, `description`, `status`, `priority`, `due_date`, `category`)
+- **Responses**:
+  - `200 OK`: Updated task object
+  - `403 Forbidden`: `{"error": "You do not have permission to modify this task"}`
 
-## Frontend fields that require a future contract
+### `DELETE /api/tasks/<int:task_id>`
+- **Access**: Authenticated Owner (`@token_required`)
+- **Responses**:
+  - `200 OK`: `{"message": "Task deleted successfully"}`
+  - `403 Forbidden`: `{"error": "You do not have permission to delete this task"}`
 
-The current UI contains these form fields, but they are not API payloads yet:
+---
 
-### Registration form
+## 4. Protected Administrator Endpoints
 
-- `name`
-- `email`
-- `password`
-- `confirm_password`
+All admin endpoints require valid JWT credentials with `role == 'admin'` (`@token_required` and `@admin_required`). Regular users receive `403 Forbidden`.
 
-The form intentionally has no public role field.
+### `GET /api/admin/stats`
+- **Access**: Admin Only
+- **Responses**:
+  - `200 OK`:
+    ```json
+    {
+      "total_users": 10,
+      "admin_count": 1,
+      "regular_user_count": 9,
+      "total_tasks": 25,
+      "pending_tasks": 12,
+      "in_progress_tasks": 5,
+      "completed_tasks": 8,
+      "completion_rate": 32.0,
+      "priority_breakdown": {
+        "low": 6,
+        "medium": 11,
+        "high": 8
+      },
+      "total_categories": 7,
+      "recent_users": [...]
+    }
+    ```
 
-### Add Task form
+### `GET /api/admin/users`
+- **Access**: Admin Only
+- **Query Parameters**: `q` (search string), `role` (`all`, `user`, `admin`)
+- **Responses**:
+  - `200 OK`: Array of user objects including `task_count`, `completed_task_count`, and `is_current_admin`.
 
-- `title`
-- `description`
-- `priority` with UI values `low`, `medium`, or `high`
-- `due_date`
+### `DELETE /api/admin/users/<int:user_id>`
+- **Access**: Admin Only
+- **Safeguard**: Returns `400 Bad Request` if an administrator attempts to delete their own account.
+- **Responses**:
+  - `200 OK`: `{"message": "User '<email>' and all associated tasks/categories were deleted successfully."}`
+  - `400 Bad Request`: `{"error": "Security safeguard: Administrators cannot delete their own account."}`
+  - `404 Not Found`: `{"error": "User not found"}`
 
-The current dashboard validates title and due date locally and displays a message that backend saving is not connected. It does not send these fields anywhere.
+### `GET /api/admin/tasks`
+- **Access**: Admin Only
+- **Query Parameters**: `q` (title/desc search), `status` (`pending`, `in_progress`, `completed`), `priority` (`low`, `medium`, `high`), `user_id`
+- **Responses**:
+  - `200 OK`: Array of task objects with embedded `user_name` and `user_email`.
 
-## Required information before integration
+### `PUT /api/admin/tasks/<int:task_id>`
+- **Access**: Admin Only
+- **Request Payload**: Fields to moderate (`title`, `description`, `status`, `priority`, `due_date`)
+- **Responses**:
+  - `200 OK`: Updated task object with user metadata.
+  - `404 Not Found`: `{"error": "Task not found"}`
 
-Backend owners must provide or implement a verified contract covering authentication, registration, task CRUD/status operations, statistics, user isolation, admin permissions, validation, and error responses. Frontend integration should begin only after those details are confirmed from backend source or an agreed versioned specification.
+### `DELETE /api/admin/tasks/<int:task_id>`
+- **Access**: Admin Only
+- **Responses**:
+  - `200 OK`: `{"message": "Task '<title>' was deleted successfully by administrator."}`
+  - `404 Not Found`: `{"error": "Task not found"}`
+
+---
+
+## 5. Admin Provisioning Utility
+Administrators cannot be registered through public registration. Administrators must be provisioned via the secure local CLI utility:
+```bash
+python backend/create_admin.py --email admin@example.com --password <strong_password> --name "System Administrator"
+python backend/create_admin.py --promote --email existing_user@example.com
+```
+
 

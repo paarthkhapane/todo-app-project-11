@@ -1,13 +1,84 @@
 /**
- * FlowTask - Authentication Logic
+ * FlowTask - Authentication Logic & API Integration (Phase 2B Step 2)
  * Handles client-side validation, password toggling, loading states,
- * and user feedback placeholders for Login and Registration.
+ * user feedback, JWT/user storage, and backend API integration.
  */
+
+// ========================================================
+// 1. Reusable Authentication Storage Utility
+// ========================================================
+const FlowAuth = (function () {
+    const TOKEN_KEY = "flowtask_token";
+    const USER_KEY = "flowtask_user";
+
+    function getToken() {
+        try {
+            return localStorage.getItem(TOKEN_KEY);
+        } catch (e) {
+            console.error("Failed to read token from localStorage:", e);
+            return null;
+        }
+    }
+
+    function getUser() {
+        try {
+            const raw = localStorage.getItem(USER_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+            console.error("Failed to read user from localStorage:", e);
+            return null;
+        }
+    }
+
+    function setAuth(token, user) {
+        try {
+            if (token) {
+                localStorage.setItem(TOKEN_KEY, token);
+            }
+            if (user) {
+                localStorage.setItem(USER_KEY, JSON.stringify(user));
+            }
+        } catch (e) {
+            console.error("Failed to save auth data to localStorage:", e);
+        }
+    }
+
+    function clearAuth() {
+        try {
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(USER_KEY);
+        } catch (e) {
+            console.error("Failed to clear auth data from localStorage:", e);
+        }
+    }
+
+    function isAuthenticated() {
+        return Boolean(getToken());
+    }
+
+    function logout(redirectUrl) {
+        clearAuth();
+        window.location.href = redirectUrl || "/login";
+    }
+
+    return {
+        getToken: getToken,
+        getUser: getUser,
+        setAuth: setAuth,
+        clearAuth: clearAuth,
+        isAuthenticated: isAuthenticated,
+        logout: logout
+    };
+})();
+
+// Expose globally for application-wide and testing access
+window.FlowAuth = FlowAuth;
+
 
 document.addEventListener("DOMContentLoaded", function () {
 
     // ========================================================
-    // 1. Password Visibility Toggle
+    // 2. Password Visibility Toggle
     // ========================================================
     const passwordButtons = document.querySelectorAll("[data-password-toggle]");
 
@@ -42,7 +113,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // ========================================================
-    // 2. Validation & Feedback Helpers
+    // 3. Validation & Feedback Helpers
     // ========================================================
 
     /**
@@ -127,7 +198,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // ========================================================
-    // 3. Login Page Validation & Submission
+    // 4. Login Page Validation & Backend Integration
     // ========================================================
     const loginForm = document.getElementById("login-form");
 
@@ -140,11 +211,25 @@ document.addEventListener("DOMContentLoaded", function () {
         const loginGlobalError = document.getElementById("login-error");
         const submitButton = document.getElementById("login-submit") || loginForm.querySelector(".auth-submit");
 
+        // Check for URL query notifications (e.g. after successful registration)
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get("registered") === "1" || urlParams.get("registered") === "true") {
+                displayFeedback(
+                    loginFeedback,
+                    "Account created successfully! Please log in with your credentials.",
+                    "success"
+                );
+            }
+        } catch (e) {
+            // URLSearchParams fallback
+        }
+
         // Live clearing of errors
         attachLiveClear(emailInput, emailError);
         attachLiveClear(passwordInput, passwordError);
 
-        loginForm.addEventListener("submit", function (event) {
+        loginForm.addEventListener("submit", async function (event) {
             event.preventDefault();
 
             resetFormState(loginForm, loginFeedback, loginGlobalError);
@@ -180,28 +265,80 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            // Client-side placeholder loading state
+            // Loading state & prevent concurrent submissions
+            const originalBtnText = submitButton ? submitButton.textContent : "Log In";
             if (submitButton) {
-                const originalText = submitButton.textContent;
                 submitButton.disabled = true;
                 submitButton.textContent = "Logging in...";
+            }
 
-                setTimeout(function () {
-                    submitButton.disabled = false;
-                    submitButton.textContent = originalText;
+            try {
+                const response = await fetch("/api/auth/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        email: emailValue,
+                        password: passwordValue
+                    })
+                });
 
+                let data = {};
+                try {
+                    data = await response.json();
+                } catch (jsonErr) {
+                    data = {};
+                }
+
+                if (response.status === 200 && data.token) {
+                    // Save JWT token and user profile
+                    FlowAuth.setAuth(data.token, data.user);
+
+                    const redirectTarget = (data.user && data.user.role === "admin") ? "/admin" : "/";
                     displayFeedback(
                         loginFeedback,
-                        "Login form validated successfully. Note: Backend authentication is not yet connected in this preview. API integration will be implemented in the next phase.",
-                        "info"
+                        `Login successful! Redirecting to ${data.user && data.user.role === "admin" ? "admin console" : "dashboard"}...`,
+                        "success"
                     );
-                }, 500);
+
+                    setTimeout(function () {
+                        window.location.href = redirectTarget;
+                    }, 500);
+                    return;
+                } else if (response.status === 401) {
+                    const errorMsg = data.error || "Invalid email or password.";
+                    displayFeedback(loginFeedback, errorMsg, "error");
+                    if (loginGlobalError) {
+                        loginGlobalError.textContent = errorMsg;
+                    }
+                    if (passwordInput) {
+                        passwordInput.focus();
+                    }
+                } else if (response.status === 400) {
+                    const errorMsg = data.error || "Both email and password are required.";
+                    displayFeedback(loginFeedback, errorMsg, "error");
+                } else {
+                    const errorMsg = data.error || "Unable to log in due to a server error. Please try again.";
+                    displayFeedback(loginFeedback, errorMsg, "error");
+                }
+            } catch (networkErr) {
+                displayFeedback(
+                    loginFeedback,
+                    "Unable to connect to the authentication server. Please check your network connection and try again.",
+                    "error"
+                );
+            } finally {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalBtnText;
+                }
             }
         });
     }
 
     // ========================================================
-    // 4. Registration Page Validation & Submission
+    // 5. Registration Page Validation & Backend Integration
     // ========================================================
     const registerForm = document.getElementById("register-form");
 
@@ -225,7 +362,7 @@ document.addEventListener("DOMContentLoaded", function () {
         attachLiveClear(passwordInput, passwordError);
         attachLiveClear(confirmInput, confirmError);
 
-        registerForm.addEventListener("submit", function (event) {
+        registerForm.addEventListener("submit", async function (event) {
             event.preventDefault();
 
             resetFormState(registerForm, registerFeedback, registerGlobalError);
@@ -289,22 +426,71 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            // Client-side placeholder loading state
+            // Loading state & prevent concurrent submissions
+            const originalBtnText = submitButton ? submitButton.textContent : "Create Account";
             if (submitButton) {
-                const originalText = submitButton.textContent;
                 submitButton.disabled = true;
                 submitButton.textContent = "Creating account...";
+            }
 
-                setTimeout(function () {
-                    submitButton.disabled = false;
-                    submitButton.textContent = originalText;
+            try {
+                // Dispatch registration to API (confirm_password intentionally omitted)
+                const response = await fetch("/api/auth/register", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        name: nameValue,
+                        email: emailValue,
+                        password: passwordValue
+                    })
+                });
 
+                let data = {};
+                try {
+                    data = await response.json();
+                } catch (jsonErr) {
+                    data = {};
+                }
+
+                if (response.status === 201) {
                     displayFeedback(
                         registerFeedback,
-                        "Registration form validated successfully. Note: Backend authentication is not yet connected in this preview. Account creation will be connected to the backend in the next phase.",
-                        "info"
+                        "Account created successfully! Redirecting to login...",
+                        "success"
                     );
-                }, 500);
+
+                    setTimeout(function () {
+                        window.location.href = "/login?registered=1";
+                    }, 800);
+                    return;
+                } else if (response.status === 409) {
+                    // Duplicate email conflict
+                    const errorMsg = data.error || "This email is already registered.";
+                    setFieldError(emailInput, emailError, errorMsg);
+                    displayFeedback(registerFeedback, errorMsg, "error");
+                    if (emailInput) {
+                        emailInput.focus();
+                    }
+                } else if (response.status === 400) {
+                    const errorMsg = data.error || "Please check your registration details.";
+                    displayFeedback(registerFeedback, errorMsg, "error");
+                } else {
+                    const errorMsg = data.error || "Server error occurred during account creation. Please try again.";
+                    displayFeedback(registerFeedback, errorMsg, "error");
+                }
+            } catch (networkErr) {
+                displayFeedback(
+                    registerFeedback,
+                    "Unable to connect to the registration server. Please check your network connection and try again.",
+                    "error"
+                );
+            } finally {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalBtnText;
+                }
             }
         });
     }
