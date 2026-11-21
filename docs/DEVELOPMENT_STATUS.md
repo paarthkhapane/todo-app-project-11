@@ -25,6 +25,9 @@ Status updated on 2026-11-20, branch `feature/frontend` following **Phase 3 (Com
 - **Verification & Test Coverage**:
   - Live MySQL integration test suite (57 Phase 3 test cases + 35 Phase 2B regression test cases = 92 automated assertions passing).
   - Database cleaned up post-test (0 lingering records).
+  - **Manual End-to-End QA Testing**:
+  - Executed 18 comprehensive manual test cases covering Authentication, Task CRUD, Search, Sorting, Filtering, Multi-user Data Isolation, and Session Persistence (`docs/Test_Cases.md`) — all 18/18 passing.
+  - Verified UI/validation fixes across user workflows (`main` branch).
 
 ## In progress
 
