@@ -1,342 +1,414 @@
-{% extends "base.html" %}
-
-{% block title %}Admin Dashboard | FlowTask{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
-{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Admin Dashboard | FlowTask{% endblock
+%} {% block extra_css %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/admin.css') }}"
+/>
+{% endblock %} {% block content %}
 <div class="app-shell admin-app-shell">
+  <!-- Admin Sidebar / Mobile Bottom Navigation -->
+  <aside class="sidebar admin-sidebar" aria-label="Administrator Navigation">
+    <div class="sidebar-brand">
+      <div class="prototype-logo admin-logo">A</div>
+      <div class="sidebar-brand-text">
+        <h2>FlowTask</h2>
+        <div class="admin-brand-tag">
+          <span class="badge badge-primary admin-badge">ADMIN CONSOLE</span>
+        </div>
+      </div>
+    </div>
 
-    <!-- Admin Sidebar / Mobile Bottom Navigation -->
-    <aside class="sidebar admin-sidebar" aria-label="Administrator Navigation">
-        <div class="sidebar-brand">
-            <div class="prototype-logo admin-logo">A</div>
-            <div class="sidebar-brand-text">
-                <h2>FlowTask</h2>
-                <div class="admin-brand-tag">
-                    <span class="badge badge-primary admin-badge">ADMIN CONSOLE</span>
-                </div>
-            </div>
+    <nav class="sidebar-nav" aria-label="Administrator Navigation Links">
+      <a
+        href="#overview"
+        class="nav-item is-active active"
+        id="nav-admin-overview"
+        data-tab="overview"
+        aria-current="page"
+      >
+        <span class="nav-icon" aria-hidden="true">▦</span>
+        <span class="nav-label">Overview</span>
+      </a>
+
+      <a href="#users" class="nav-item" id="nav-admin-users" data-tab="users">
+        <span class="nav-icon" aria-hidden="true">👥</span>
+        <span class="nav-label">Manage Users</span>
+      </a>
+
+      <a href="#tasks" class="nav-item" id="nav-admin-tasks" data-tab="tasks">
+        <span class="nav-icon" aria-hidden="true">📋</span>
+        <span class="nav-label">All Tasks</span>
+      </a>
+
+      <div class="sidebar-divider"></div>
+
+      <a href="/" class="nav-item nav-item-workspace">
+        <span class="nav-icon" aria-hidden="true">✓</span>
+        <span class="nav-label">User Workspace</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer desktop-only">
+      <a href="#" class="nav-item nav-item-logout" id="admin-sidebar-logout">
+        <span class="nav-icon" aria-hidden="true">↪</span>
+        <span class="nav-label">Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Admin Dashboard Content Area -->
+  <main class="dashboard-main admin-main">
+    <!-- Admin Header -->
+    <header class="dashboard-header admin-header">
+      <div class="dashboard-header-title">
+        <p class="eyebrow">FLOWTASK ADMINISTRATION</p>
+        <h1 id="admin-view-title">System Overview</h1>
+        <p class="muted small header-date" id="admin-date"></p>
+      </div>
+
+      <div class="profile-area">
+        <div class="profile-info desktop-only">
+          <p class="profile-name" id="admin-user-name">Administrator</p>
+          <span class="badge badge-primary admin-role-pill">Administrator</span>
         </div>
 
-        <nav class="sidebar-nav" aria-label="Administrator Navigation Links">
-            <a href="#overview" class="nav-item is-active active" id="nav-admin-overview" data-tab="overview" aria-current="page">
-                <span class="nav-icon" aria-hidden="true">▦</span>
-                <span class="nav-label">Overview</span>
-            </a>
-
-            <a href="#users" class="nav-item" id="nav-admin-users" data-tab="users">
-                <span class="nav-icon" aria-hidden="true">👥</span>
-                <span class="nav-label">Manage Users</span>
-            </a>
-
-            <a href="#tasks" class="nav-item" id="nav-admin-tasks" data-tab="tasks">
-                <span class="nav-icon" aria-hidden="true">📋</span>
-                <span class="nav-label">All Tasks</span>
-            </a>
-
-            <div class="sidebar-divider"></div>
-
-            <a href="/" class="nav-item nav-item-workspace">
-                <span class="nav-icon" aria-hidden="true">✓</span>
-                <span class="nav-label">User Workspace</span>
-            </a>
-        </nav>
-
-        <div class="sidebar-footer desktop-only">
-            <a href="#" class="nav-item nav-item-logout" id="admin-sidebar-logout">
-                <span class="nav-icon" aria-hidden="true">↪</span>
-                <span class="nav-label">Logout</span>
-            </a>
-        </div>
-    </aside>
-
-
-    <!-- Main Admin Dashboard Content Area -->
-    <main class="dashboard-main admin-main">
-
-        <!-- Admin Header -->
-        <header class="dashboard-header admin-header">
-            <div class="dashboard-header-title">
-                <p class="eyebrow">FLOWTASK ADMINISTRATION</p>
-                <h1 id="admin-view-title">System Overview</h1>
-                <p class="muted small header-date" id="admin-date"></p>
-            </div>
-
-            <div class="profile-area">
-                <div class="profile-info desktop-only">
-                    <p class="profile-name" id="admin-user-name">Administrator</p>
-                    <span class="badge badge-primary admin-role-pill">Administrator</span>
-                </div>
-
-                <div class="header-actions-group desktop-only">
-                    <a href="/" class="btn btn-secondary btn-sm" title="Go to User Workspace">
-                        User View ↗
-                    </a>
-                    <button type="button" class="btn btn-secondary btn-sm" id="admin-header-logout" title="Sign out">
-                        Logout
-                    </button>
-                </div>
-
-                <div class="header-mobile-actions mobile-only">
-                    <a href="/" class="header-action-btn" title="User Workspace" aria-label="User Workspace">
-                        <span aria-hidden="true">✓</span>
-                    </a>
-                    <a href="#" class="header-action-btn header-action-logout" id="admin-mobile-logout" title="Logout" aria-label="Logout">
-                        <span aria-hidden="true">↪</span>
-                    </a>
-                </div>
-
-                <div class="profile-avatar admin-avatar" aria-label="Admin avatar">
-                    A
-                </div>
-            </div>
-        </header>
-
-
-        <!-- Global Notification Banner -->
-        <div class="admin-notification-container" id="admin-notification" hidden role="alert" aria-live="polite">
-            <div class="notification" id="admin-notification-body">
-                <span class="notification-icon" id="admin-notification-icon">ℹ️</span>
-                <p class="notification-message" id="admin-notification-message"></p>
-                <button type="button" class="icon-button" id="admin-notification-close" aria-label="Dismiss">&times;</button>
-            </div>
+        <div class="header-actions-group desktop-only">
+          <a
+            href="/"
+            class="btn btn-secondary btn-sm"
+            title="Go to User Workspace"
+          >
+            User View ↗
+          </a>
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            id="admin-header-logout"
+            title="Sign out"
+          >
+            Logout
+          </button>
         </div>
 
+        <div class="header-mobile-actions mobile-only">
+          <a
+            href="/"
+            class="header-action-btn"
+            title="User Workspace"
+            aria-label="User Workspace"
+          >
+            <span aria-hidden="true">✓</span>
+          </a>
+          <a
+            href="#"
+            class="header-action-btn header-action-logout"
+            id="admin-mobile-logout"
+            title="Logout"
+            aria-label="Logout"
+          >
+            <span aria-hidden="true">↪</span>
+          </a>
+        </div>
 
-        <!-- ======================================================== -->
-        <!-- TAB 1: SYSTEM OVERVIEW                                   -->
-        <!-- ======================================================== -->
-        <section class="dashboard-content admin-tab-content" id="tab-admin-overview">
+        <div class="profile-avatar admin-avatar" aria-label="Admin avatar">
+          A
+        </div>
+      </div>
+    </header>
 
-            <div class="section-heading dashboard-welcome">
-                <div>
-                    <h2>Platform Metrics & Activity</h2>
-                    <p class="muted">Live aggregated statistics from the database.</p>
-                </div>
-                <button class="btn btn-secondary" id="refresh-stats-btn" type="button">
-                    <span>🔄</span> Refresh Data
-                </button>
+    <!-- Global Notification Banner -->
+    <div
+      class="admin-notification-container"
+      id="admin-notification"
+      hidden
+      role="alert"
+      aria-live="polite"
+    >
+      <div class="notification" id="admin-notification-body">
+        <span class="notification-icon" id="admin-notification-icon">ℹ️</span>
+        <p class="notification-message" id="admin-notification-message"></p>
+        <button
+          type="button"
+          class="icon-button"
+          id="admin-notification-close"
+          aria-label="Dismiss"
+        >
+          &times;
+        </button>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- TAB 1: SYSTEM OVERVIEW                                   -->
+    <!-- ======================================================== -->
+    <section
+      class="dashboard-content admin-tab-content"
+      id="tab-admin-overview"
+    >
+      <div class="section-heading dashboard-welcome">
+        <div>
+          <h2>Platform Metrics & Activity</h2>
+          <p class="muted">Live aggregated statistics from the database.</p>
+        </div>
+        <button class="btn btn-secondary" id="refresh-stats-btn" type="button">
+          <span>🔄</span> Refresh Data
+        </button>
+      </div>
+
+      <!-- Stats Grid (6 KPI cards) -->
+      <div
+        class="stats-grid admin-stats-grid"
+        aria-label="Platform overview statistics"
+      >
+        <div class="stat-card stat-card-total">
+          <div class="stat-card-header">
+            <span class="stat-card-label">Total Users</span>
+            <span class="stat-card-icon" aria-hidden="true">👥</span>
+          </div>
+          <div class="stat-card-value" id="stat-total-users">--</div>
+          <p class="muted small stat-card-desc" id="stat-users-desc">
+            Active registered accounts
+          </p>
+        </div>
+
+        <div class="stat-card stat-card-total">
+          <div class="stat-card-header">
+            <span class="stat-card-label">Total Tasks</span>
+            <span class="stat-card-icon" aria-hidden="true">📋</span>
+          </div>
+          <div class="stat-card-value" id="stat-total-tasks">--</div>
+          <p class="muted small stat-card-desc">Across all user workspaces</p>
+        </div>
+
+        <div class="stat-card stat-card-pending">
+          <div class="stat-card-header">
+            <span class="stat-card-label">Pending Tasks</span>
+            <span class="stat-card-icon" aria-hidden="true">⏳</span>
+          </div>
+          <div class="stat-card-value" id="stat-pending-tasks">--</div>
+          <p class="muted small stat-card-desc">Awaiting action</p>
+        </div>
+
+        <div class="stat-card stat-card-info">
+          <div class="stat-card-header">
+            <span class="stat-card-label">In Progress</span>
+            <span class="stat-card-icon" aria-hidden="true">🔄</span>
+          </div>
+          <div class="stat-card-value" id="stat-in-progress-tasks">--</div>
+          <p class="muted small stat-card-desc">Currently being worked on</p>
+        </div>
+
+        <div class="stat-card stat-card-completed">
+          <div class="stat-card-header">
+            <span class="stat-card-label">Completed Tasks</span>
+            <span class="stat-card-icon" aria-hidden="true">✅</span>
+          </div>
+          <div class="stat-card-value" id="stat-completed-tasks">--</div>
+          <p class="muted small stat-card-desc">Finished tasks</p>
+        </div>
+
+        <div class="stat-card stat-card-rate">
+          <div class="stat-card-header">
+            <span class="stat-card-label">Completion Rate</span>
+            <span class="stat-card-icon" aria-hidden="true">📊</span>
+          </div>
+          <div class="stat-card-value" id="stat-completion-rate">--%</div>
+          <p class="muted small stat-card-desc">Overall task resolution</p>
+        </div>
+      </div>
+
+      <!-- Visual Distribution Widgets -->
+      <div class="admin-analytics-grid">
+        <!-- Priority Breakdown Card -->
+        <div class="card analytics-card">
+          <div class="card-header">
+            <h3>Priority Breakdown</h3>
+            <span class="muted small">All tasks</span>
+          </div>
+          <div class="distribution-list" id="priority-distribution">
+            <div class="distribution-item">
+              <div class="distribution-label">
+                <span class="priority-badge priority-high">High</span>
+                <span class="distribution-count" id="priority-count-high"
+                  >0</span
+                >
+              </div>
+              <div class="progress-track">
+                <div
+                  class="progress-bar progress-high"
+                  id="progress-bar-high"
+                  style="width: 0%"
+                ></div>
+              </div>
             </div>
 
-            <!-- Stats Grid (6 KPI cards) -->
-            <div class="stats-grid admin-stats-grid" aria-label="Platform overview statistics">
-
-                <div class="stat-card stat-card-total">
-                    <div class="stat-card-header">
-                        <span class="stat-card-label">Total Users</span>
-                        <span class="stat-card-icon" aria-hidden="true">👥</span>
-                    </div>
-                    <div class="stat-card-value" id="stat-total-users">--</div>
-                    <p class="muted small stat-card-desc" id="stat-users-desc">Active registered accounts</p>
-                </div>
-
-                <div class="stat-card stat-card-total">
-                    <div class="stat-card-header">
-                        <span class="stat-card-label">Total Tasks</span>
-                        <span class="stat-card-icon" aria-hidden="true">📋</span>
-                    </div>
-                    <div class="stat-card-value" id="stat-total-tasks">--</div>
-                    <p class="muted small stat-card-desc">Across all user workspaces</p>
-                </div>
-
-                <div class="stat-card stat-card-pending">
-                    <div class="stat-card-header">
-                        <span class="stat-card-label">Pending Tasks</span>
-                        <span class="stat-card-icon" aria-hidden="true">⏳</span>
-                    </div>
-                    <div class="stat-card-value" id="stat-pending-tasks">--</div>
-                    <p class="muted small stat-card-desc">Awaiting action</p>
-                </div>
-
-                <div class="stat-card stat-card-info">
-                    <div class="stat-card-header">
-                        <span class="stat-card-label">In Progress</span>
-                        <span class="stat-card-icon" aria-hidden="true">🔄</span>
-                    </div>
-                    <div class="stat-card-value" id="stat-in-progress-tasks">--</div>
-                    <p class="muted small stat-card-desc">Currently being worked on</p>
-                </div>
-
-                <div class="stat-card stat-card-completed">
-                    <div class="stat-card-header">
-                        <span class="stat-card-label">Completed Tasks</span>
-                        <span class="stat-card-icon" aria-hidden="true">✅</span>
-                    </div>
-                    <div class="stat-card-value" id="stat-completed-tasks">--</div>
-                    <p class="muted small stat-card-desc">Finished tasks</p>
-                </div>
-
-                <div class="stat-card stat-card-rate">
-                    <div class="stat-card-header">
-                        <span class="stat-card-label">Completion Rate</span>
-                        <span class="stat-card-icon" aria-hidden="true">📊</span>
-                    </div>
-                    <div class="stat-card-value" id="stat-completion-rate">--%</div>
-                    <p class="muted small stat-card-desc">Overall task resolution</p>
-                </div>
-
+            <div class="distribution-item">
+              <div class="distribution-label">
+                <span class="priority-badge priority-medium">Medium</span>
+                <span class="distribution-count" id="priority-count-medium"
+                  >0</span
+                >
+              </div>
+              <div class="progress-track">
+                <div
+                  class="progress-bar progress-medium"
+                  id="progress-bar-medium"
+                  style="width: 0%"
+                ></div>
+              </div>
             </div>
 
-            <!-- Visual Distribution Widgets -->
-            <div class="admin-analytics-grid">
-
-                <!-- Priority Breakdown Card -->
-                <div class="card analytics-card">
-                    <div class="card-header">
-                        <h3>Priority Breakdown</h3>
-                        <span class="muted small">All tasks</span>
-                    </div>
-                    <div class="distribution-list" id="priority-distribution">
-                        <div class="distribution-item">
-                            <div class="distribution-label">
-                                <span class="priority-badge priority-high">High</span>
-                                <span class="distribution-count" id="priority-count-high">0</span>
-                            </div>
-                            <div class="progress-track">
-                                <div class="progress-bar progress-high" id="progress-bar-high" style="width: 0%;"></div>
-                            </div>
-                        </div>
-
-                        <div class="distribution-item">
-                            <div class="distribution-label">
-                                <span class="priority-badge priority-medium">Medium</span>
-                                <span class="distribution-count" id="priority-count-medium">0</span>
-                            </div>
-                            <div class="progress-track">
-                                <div class="progress-bar progress-medium" id="progress-bar-medium" style="width: 0%;"></div>
-                            </div>
-                        </div>
-
-                        <div class="distribution-item">
-                            <div class="distribution-label">
-                                <span class="priority-badge priority-low">Low</span>
-                                <span class="distribution-count" id="priority-count-low">0</span>
-                            </div>
-                            <div class="progress-track">
-                                <div class="progress-bar progress-low" id="progress-bar-low" style="width: 0%;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Registrations Card -->
-                <div class="card analytics-card">
-                    <div class="card-header">
-                        <h3>Recent Registrations</h3>
-                        <a href="#users" class="btn btn-secondary btn-sm" data-action="view-all-users">View All</a>
-                    </div>
-                    <div id="recent-users-container">
-                        <div class="empty-state-small muted">Loading recent users...</div>
-                    </div>
-                </div>
-
+            <div class="distribution-item">
+              <div class="distribution-label">
+                <span class="priority-badge priority-low">Low</span>
+                <span class="distribution-count" id="priority-count-low"
+                  >0</span
+                >
+              </div>
+              <div class="progress-track">
+                <div
+                  class="progress-bar progress-low"
+                  id="progress-bar-low"
+                  style="width: 0%"
+                ></div>
+              </div>
             </div>
+          </div>
+        </div>
 
-        </section>
+        <!-- Recent Registrations Card -->
+        <div class="card analytics-card">
+          <div class="card-header">
+            <h3>Recent Registrations</h3>
+            <a
+              href="#users"
+              class="btn btn-secondary btn-sm"
+              data-action="view-all-users"
+              >View All</a
+            >
+          </div>
+          <div id="recent-users-container">
+            <div class="empty-state-small muted">Loading recent users...</div>
+          </div>
+        </div>
+      </div>
+    </section>
 
+    <!-- ======================================================== -->
+    <!-- TAB 2: MANAGE USERS                                      -->
+    <!-- ======================================================== -->
+    <section
+      class="dashboard-content admin-tab-content"
+      id="tab-admin-users"
+      hidden
+    >
+      <div class="section-heading">
+        <div>
+          <h2>Registered Users</h2>
+          <p class="muted">
+            Search and manage user accounts and system permissions.
+          </p>
+        </div>
+      </div>
 
-        <!-- ======================================================== -->
-        <!-- TAB 2: MANAGE USERS                                      -->
-        <!-- ======================================================== -->
-        <section class="dashboard-content admin-tab-content" id="tab-admin-users" hidden>
+      <!-- Users Filter & Search Bar -->
+      <div class="admin-toolbar">
+        <div class="search-field">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input
+            type="search"
+            id="users-search-input"
+            class="input"
+            placeholder="Search users by name or email..."
+            aria-label="Search users"
+          />
+        </div>
 
-            <div class="section-heading">
-                <div>
-                    <h2>Registered Users</h2>
-                    <p class="muted">Search and manage user accounts and system permissions.</p>
-                </div>
-            </div>
+        <div class="toolbar-filters">
+          <select
+            id="users-role-filter"
+            class="select"
+            aria-label="Filter by role"
+          >
+            <option value="all">All Roles</option>
+            <option value="user">Regular Users</option>
+            <option value="admin">Administrators</option>
+          </select>
 
-            <!-- Users Filter & Search Bar -->
-            <div class="admin-toolbar">
-                <div class="search-field">
-                    <span class="search-icon" aria-hidden="true">🔍</span>
-                    <input
-                        type="search"
-                        id="users-search-input"
-                        class="input"
-                        placeholder="Search users by name or email..."
-                        aria-label="Search users"
-                    >
-                </div>
+          <span class="badge badge-info" id="users-count-badge">0 Users</span>
+        </div>
+      </div>
 
-                <div class="toolbar-filters">
-                    <select id="users-role-filter" class="select" aria-label="Filter by role">
-                        <option value="all">All Roles</option>
-                        <option value="user">Regular Users</option>
-                        <option value="admin">Administrators</option>
-                    </select>
+      <!-- Users Container (dynamically populated by admin.js) -->
+      <div id="users-list-container" aria-live="polite">
+        <!-- Populated via admin.js -->
+      </div>
+    </section>
 
-                    <span class="badge badge-info" id="users-count-badge">0 Users</span>
-                </div>
-            </div>
+    <!-- ======================================================== -->
+    <!-- TAB 3: ALL TASKS                                         -->
+    <!-- ======================================================== -->
+    <section
+      class="dashboard-content admin-tab-content"
+      id="tab-admin-tasks"
+      hidden
+    >
+      <div class="section-heading">
+        <div>
+          <h2>Cross-Workspace Tasks</h2>
+          <p class="muted">
+            Monitor, filter, and moderate tasks across all user accounts.
+          </p>
+        </div>
+      </div>
 
-            <!-- Users Container (dynamically populated by admin.js) -->
-            <div id="users-list-container" aria-live="polite">
-                <!-- Populated via admin.js -->
-            </div>
+      <!-- Tasks Filter & Search Bar -->
+      <div class="admin-toolbar">
+        <div class="search-field">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input
+            type="search"
+            id="tasks-search-input"
+            class="input"
+            placeholder="Search tasks by title or description..."
+            aria-label="Search tasks"
+          />
+        </div>
 
-        </section>
+        <div class="toolbar-filters">
+          <select
+            id="tasks-status-filter"
+            class="select"
+            aria-label="Filter by status"
+          >
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
 
+          <select
+            id="tasks-priority-filter"
+            class="select"
+            aria-label="Filter by priority"
+          >
+            <option value="all">All Priorities</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
 
-        <!-- ======================================================== -->
-        <!-- TAB 3: ALL TASKS                                         -->
-        <!-- ======================================================== -->
-        <section class="dashboard-content admin-tab-content" id="tab-admin-tasks" hidden>
+          <span class="badge badge-info" id="tasks-count-badge">0 Tasks</span>
+        </div>
+      </div>
 
-            <div class="section-heading">
-                <div>
-                    <h2>Cross-Workspace Tasks</h2>
-                    <p class="muted">Monitor, filter, and moderate tasks across all user accounts.</p>
-                </div>
-            </div>
-
-            <!-- Tasks Filter & Search Bar -->
-            <div class="admin-toolbar">
-                <div class="search-field">
-                    <span class="search-icon" aria-hidden="true">🔍</span>
-                    <input
-                        type="search"
-                        id="tasks-search-input"
-                        class="input"
-                        placeholder="Search tasks by title or description..."
-                        aria-label="Search tasks"
-                    >
-                </div>
-
-                <div class="toolbar-filters">
-                    <select id="tasks-status-filter" class="select" aria-label="Filter by status">
-                        <option value="all">All Statuses</option>
-                        <option value="pending">Pending</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="completed">Completed</option>
-                    </select>
-
-                    <select id="tasks-priority-filter" class="select" aria-label="Filter by priority">
-                        <option value="all">All Priorities</option>
-                        <option value="high">High</option>
-                        <option value="medium">Medium</option>
-                        <option value="low">Low</option>
-                    </select>
-
-                    <span class="badge badge-info" id="tasks-count-badge">0 Tasks</span>
-                </div>
-            </div>
-
-            <!-- Tasks Container (dynamically populated by admin.js) -->
-            <div id="all-tasks-container" aria-live="polite">
-                <!-- Populated via admin.js -->
-            </div>
-
-        </section>
-
-    </main>
-
+      <!-- Tasks Container (dynamically populated by admin.js) -->
+      <div id="all-tasks-container" aria-live="polite">
+        <!-- Populated via admin.js -->
+      </div>
+    </section>
+  </main>
 </div>
-
 
 <!-- ======================================================== -->
 <!-- MODALS                                                   -->
@@ -344,117 +416,199 @@
 
 <!-- 1. Delete User Confirmation Modal -->
 <div class="modal-backdrop" id="delete-user-modal" hidden>
-    <div class="modal modal-danger" role="dialog" aria-modal="true" aria-labelledby="delete-user-modal-title">
-        <div class="modal-header">
-            <div>
-                <p class="eyebrow danger-text">CONFIRM USER DELETION</p>
-                <h2 id="delete-user-modal-title">Delete User Account</h2>
-            </div>
-            <button type="button" class="icon-button" id="close-delete-user-modal" aria-label="Close modal">&times;</button>
-        </div>
-
-        <div class="modal-body">
-            <p>Are you sure you want to permanently delete this user?</p>
-            <div class="delete-target-card">
-                <p class="delete-user-name" id="delete-user-target-name">User Name</p>
-                <p class="muted small delete-user-email" id="delete-user-target-email">user@example.com</p>
-            </div>
-            <p class="danger-warning">
-                ⚠️ <strong>Warning:</strong> Deleting this account will permanently remove all of their categories and associated tasks. This action cannot be undone.
-            </p>
-            <div class="auth-feedback feedback-error" id="delete-user-error" hidden></div>
-        </div>
-
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" id="cancel-delete-user-modal">Cancel</button>
-            <button type="button" class="btn btn-danger" id="confirm-delete-user-btn">Delete User</button>
-        </div>
+  <div
+    class="modal modal-danger"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="delete-user-modal-title"
+  >
+    <div class="modal-header">
+      <div>
+        <p class="eyebrow danger-text">CONFIRM USER DELETION</p>
+        <h2 id="delete-user-modal-title">Delete User Account</h2>
+      </div>
+      <button
+        type="button"
+        class="icon-button"
+        id="close-delete-user-modal"
+        aria-label="Close modal"
+      >
+        &times;
+      </button>
     </div>
+
+    <div class="modal-body">
+      <p>Are you sure you want to permanently delete this user?</p>
+      <div class="delete-target-card">
+        <p class="delete-user-name" id="delete-user-target-name">User Name</p>
+        <p class="muted small delete-user-email" id="delete-user-target-email">
+          user@example.com
+        </p>
+      </div>
+      <p class="danger-warning">
+        ⚠️ <strong>Warning:</strong> Deleting this account will permanently
+        remove all of their categories and associated tasks. This action cannot
+        be undone.
+      </p>
+      <div
+        class="auth-feedback feedback-error"
+        id="delete-user-error"
+        hidden
+      ></div>
+    </div>
+
+    <div class="modal-footer">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        id="cancel-delete-user-modal"
+      >
+        Cancel
+      </button>
+      <button type="button" class="btn btn-danger" id="confirm-delete-user-btn">
+        Delete User
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- 2. Delete Task Confirmation Modal -->
 <div class="modal-backdrop" id="delete-task-modal" hidden>
-    <div class="modal modal-danger" role="dialog" aria-modal="true" aria-labelledby="delete-task-modal-title">
-        <div class="modal-header">
-            <div>
-                <p class="eyebrow danger-text">CONFIRM TASK DELETION</p>
-                <h2 id="delete-task-modal-title">Delete Task</h2>
-            </div>
-            <button type="button" class="icon-button" id="close-delete-task-modal" aria-label="Close modal">&times;</button>
-        </div>
-
-        <div class="modal-body">
-            <p>Are you sure you want to permanently delete this task?</p>
-            <div class="delete-target-card">
-                <p class="delete-task-title" id="delete-task-target-title">Task Title</p>
-                <p class="muted small" id="delete-task-target-owner">Owner: user@example.com</p>
-            </div>
-            <div class="auth-feedback feedback-error" id="delete-task-error" hidden></div>
-        </div>
-
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" id="cancel-delete-task-modal">Cancel</button>
-            <button type="button" class="btn btn-danger" id="confirm-delete-task-btn">Delete Task</button>
-        </div>
+  <div
+    class="modal modal-danger"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="delete-task-modal-title"
+  >
+    <div class="modal-header">
+      <div>
+        <p class="eyebrow danger-text">CONFIRM TASK DELETION</p>
+        <h2 id="delete-task-modal-title">Delete Task</h2>
+      </div>
+      <button
+        type="button"
+        class="icon-button"
+        id="close-delete-task-modal"
+        aria-label="Close modal"
+      >
+        &times;
+      </button>
     </div>
+
+    <div class="modal-body">
+      <p>Are you sure you want to permanently delete this task?</p>
+      <div class="delete-target-card">
+        <p class="delete-task-title" id="delete-task-target-title">
+          Task Title
+        </p>
+        <p class="muted small" id="delete-task-target-owner">
+          Owner: user@example.com
+        </p>
+      </div>
+      <div
+        class="auth-feedback feedback-error"
+        id="delete-task-error"
+        hidden
+      ></div>
+    </div>
+
+    <div class="modal-footer">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        id="cancel-delete-task-modal"
+      >
+        Cancel
+      </button>
+      <button type="button" class="btn btn-danger" id="confirm-delete-task-btn">
+        Delete Task
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- 3. Edit Task Status / Priority Modal -->
 <div class="modal-backdrop" id="edit-task-modal" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-task-modal-title">
-        <div class="modal-header">
-            <div>
-                <p class="eyebrow">MODERATE TASK</p>
-                <h2 id="edit-task-modal-title">Edit Task</h2>
-            </div>
-            <button type="button" class="icon-button" id="close-edit-task-modal" aria-label="Close modal">&times;</button>
+  <div
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="edit-task-modal-title"
+  >
+    <div class="modal-header">
+      <div>
+        <p class="eyebrow">MODERATE TASK</p>
+        <h2 id="edit-task-modal-title">Edit Task</h2>
+      </div>
+      <button
+        type="button"
+        class="icon-button"
+        id="close-edit-task-modal"
+        aria-label="Close modal"
+      >
+        &times;
+      </button>
+    </div>
+
+    <form id="admin-task-form">
+      <div class="modal-body">
+        <div class="field">
+          <label for="admin-edit-title">Task Title</label>
+          <input type="text" id="admin-edit-title" class="input" required />
         </div>
 
-        <form id="admin-task-form">
-            <div class="modal-body">
-                <div class="field">
-                    <label for="admin-edit-title">Task Title</label>
-                    <input type="text" id="admin-edit-title" class="input" required>
-                </div>
+        <div class="form-columns">
+          <div class="field">
+            <label for="admin-edit-status">Status</label>
+            <select id="admin-edit-status" class="select">
+              <option value="pending">Pending</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
 
-                <div class="form-columns">
-                    <div class="field">
-                        <label for="admin-edit-status">Status</label>
-                        <select id="admin-edit-status" class="select">
-                            <option value="pending">Pending</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="completed">Completed</option>
-                        </select>
-                    </div>
+          <div class="field">
+            <label for="admin-edit-priority">Priority</label>
+            <select id="admin-edit-priority" class="select">
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
 
-                    <div class="field">
-                        <label for="admin-edit-priority">Priority</label>
-                        <select id="admin-edit-priority" class="select">
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
-                        </select>
-                    </div>
-                </div>
+        <div class="field">
+          <label for="admin-edit-description">Description</label>
+          <textarea
+            id="admin-edit-description"
+            class="textarea"
+            rows="3"
+          ></textarea>
+        </div>
 
-                <div class="field">
-                    <label for="admin-edit-description">Description</label>
-                    <textarea id="admin-edit-description" class="textarea" rows="3"></textarea>
-                </div>
+        <div
+          class="auth-feedback feedback-error"
+          id="admin-edit-task-error"
+          hidden
+        ></div>
+      </div>
 
-                <div class="auth-feedback feedback-error" id="admin-edit-task-error" hidden></div>
-            </div>
-
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="cancel-edit-task-modal">Cancel</button>
-                <button type="submit" class="btn btn-primary" id="save-admin-task-btn">Save Changes</button>
-            </div>
-        </form>
-    </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          id="cancel-edit-task-modal"
+        >
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" id="save-admin-task-btn">
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
+{% endblock %} {% block extra_js %}
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 {% endblock %}

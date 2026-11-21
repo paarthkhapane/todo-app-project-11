@@ -266,6 +266,15 @@ def create_task(current_user):
         priority = "medium"
 
     # Parse optional due_date
+    # due_date = None
+    # if due_date_raw:
+    #     try:
+    #         due_date = datetime.fromisoformat(due_date_raw)
+    #     except (ValueError, TypeError):
+    #         return jsonify({
+    #             "error": "Invalid 'due_date' format. Please use ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)"
+    #         }), 400
+    # Parse optional due_date
     due_date = None
     if due_date_raw:
         try:
@@ -274,6 +283,12 @@ def create_task(current_user):
             return jsonify({
                 "error": "Invalid 'due_date' format. Please use ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)"
             }), 400
+
+    # Prevent tasks from being created with past due dates
+    if due_date.date() < datetime.now().date():
+        return jsonify({
+            "error": "Due date cannot be in the past."
+        }), 400
 
     # Resolve optional category scoped to authenticated user
     category_id = None
@@ -395,6 +410,18 @@ def update_task(current_user, task_id):
                 }), 400
             task.priority = priority_raw.lower()
 
+    # # 8. Validate and update 'due_date' if provided
+    # if "due_date" in data:
+    #     due_date_raw = data.get("due_date")
+    #     if due_date_raw is None or due_date_raw == "":
+    #         task.due_date = None
+    #     else:
+    #         try:
+    #             task.due_date = datetime.fromisoformat(due_date_raw)
+    #         except (ValueError, TypeError):
+    #             return jsonify({
+    #                 "error": "Invalid 'due_date' format. Please use ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)"
+    #             }), 400
     # 8. Validate and update 'due_date' if provided
     if "due_date" in data:
         due_date_raw = data.get("due_date")
@@ -402,12 +429,19 @@ def update_task(current_user, task_id):
             task.due_date = None
         else:
             try:
-                task.due_date = datetime.fromisoformat(due_date_raw)
+                new_due_date = datetime.fromisoformat(due_date_raw)
             except (ValueError, TypeError):
                 return jsonify({
                     "error": "Invalid 'due_date' format. Please use ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)"
                 }), 400
 
+            # Prevent updating tasks with past due dates
+            if new_due_date.date() < datetime.now().date():
+                return jsonify({
+                    "error": "Due date cannot be in the past."
+                }), 400
+
+            task.due_date = new_due_date
     # 9. Update 'category' if provided
     if "category" in data:
         category_raw = data.get("category")
