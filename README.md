@@ -4,29 +4,21 @@
 
 This guide is for testing the Flask backend against the MySQL database used by the database team.
 
-The backend branch is:
-
-`feature/backend-api`
-
-The database expected by the backend is:
-
-`todo_app`
-
-This guide only verifies the existing backend and database integration. It does not create or modify database tables.
+The project uses the `main` branch for integrated development.
+All backend, frontend, and database integration changes are merged into this branch.
 
 ---
 
-## 1. Get the Latest Backend Code
+## 1. Get the Latest Code
 
 From the project root:
 
 ```bash
-git fetch origin
-git checkout feature/backend-api
-git pull origin feature/backend-api
+git checkout main
+git pull origin main
 ```
 
-Make sure the latest backend changes are present.
+Make sure the latest changes are present.
 
 ---
 
@@ -36,19 +28,17 @@ Make sure MySQL is running locally.
 
 The backend expects:
 
-```text
-Host: localhost
-Port: 3306
-Database: todo_app
-```
+| Configuration | Value       |
+| ------------- | ----------- |
+| Host          | `localhost` |
+| Port          | `3306`      |
+| Database      | `todo_app`  |
 
 The database should already contain these tables:
 
-```text
-users
-categories
-tasks
-```
+- `users`
+- `categories`
+- `tasks`
 
 The database schema should be created using the database team's SQL files.
 
@@ -136,7 +126,7 @@ http://127.0.0.1:5000
 
 ### Request
 
-```text
+```http
 GET /
 ```
 
@@ -156,7 +146,7 @@ The response should indicate that the backend is running.
 
 ### Request
 
-```text
+```http
 POST /api/auth/register
 ```
 
@@ -166,13 +156,13 @@ Full URL:
 http://127.0.0.1:5000/api/auth/register
 ```
 
-### JSON body
+### JSON Body
 
 ```json
 {
-    "name": "Backend Test User",
-    "email": "backend.test@example.com",
-    "password": "TestPassword123"
+  "name": "Backend Test User",
+  "email": "backend.test@example.com",
+  "password": "TestPassword123"
 }
 ```
 
@@ -186,15 +176,11 @@ The response should contain the newly created user.
 
 The password must not be returned.
 
-### Database check
+### Database Check
 
-Open MySQL and verify that a new row was added to:
+Open MySQL and verify that a new row was added to the `users` table.
 
-```text
-users
-```
-
-The `password_hash` column should contain a hashed password, not:
+The `password_hash` column should contain a hashed password, not the original password:
 
 ```text
 TestPassword123
@@ -206,16 +192,16 @@ TestPassword123
 
 ### Request
 
-```text
+```http
 POST /api/auth/login
 ```
 
-### JSON body
+### JSON Body
 
 ```json
 {
-    "email": "backend.test@example.com",
-    "password": "TestPassword123"
+  "email": "backend.test@example.com",
+  "password": "TestPassword123"
 }
 ```
 
@@ -233,9 +219,9 @@ Copy the token for the protected task requests.
 
 # Task API Testing
 
-For the following protected requests, add:
+For the following protected requests, add the Authorization header:
 
-```text
+```http
 Authorization: Bearer YOUR_JWT_TOKEN
 ```
 
@@ -245,18 +231,18 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 ### Request
 
-```text
+```http
 POST /api/tasks
 ```
 
-### JSON body
+### JSON Body
 
 ```json
 {
-    "title": "Backend integration test",
-    "description": "Testing Flask with the todo_app database",
-    "status": "pending",
-    "priority": "high"
+  "title": "Backend integration test",
+  "description": "Testing Flask with the todo_app database",
+  "status": "pending",
+  "priority": "high"
 }
 ```
 
@@ -272,18 +258,16 @@ The backend gets the user ID from the JWT.
 
 The response should contain:
 
-```text
-id
-user_id
-category_id
-title
-description
-status
-priority
-due_date
-created_at
-updated_at
-```
+- `id`
+- `user_id`
+- `category_id`
+- `title`
+- `description`
+- `status`
+- `priority`
+- `due_date`
+- `created_at`
+- `updated_at`
 
 `category_id` should be `null` if no category was supplied.
 
@@ -293,13 +277,7 @@ updated_at
 
 Check the `tasks` table.
 
-The created task should exist and its:
-
-```text
-user_id
-```
-
-should match the authenticated user.
+The created task should exist, and its `user_id` should match the authenticated user.
 
 ---
 
@@ -307,7 +285,7 @@ should match the authenticated user.
 
 ### Request
 
-```text
+```http
 GET /api/tasks
 ```
 
@@ -327,13 +305,13 @@ Use the task ID returned from task creation.
 
 ### Request
 
-```text
+```http
 GET /api/tasks/<task_id>
 ```
 
 Example:
 
-```text
+```http
 GET /api/tasks/1
 ```
 
@@ -349,23 +327,23 @@ GET /api/tasks/1
 
 ### Request
 
-```text
+```http
 PUT /api/tasks/<task_id>
 ```
 
 Example:
 
-```text
+```http
 PUT /api/tasks/1
 ```
 
-### JSON body
+### JSON Body
 
 ```json
 {
-    "title": "Updated backend integration test",
-    "status": "in_progress",
-    "priority": "medium"
+  "title": "Updated backend integration test",
+  "status": "in_progress",
+  "priority": "medium"
 }
 ```
 
@@ -387,7 +365,7 @@ Update the same task:
 
 ```json
 {
-    "status": "completed"
+  "status": "completed"
 }
 ```
 
@@ -403,7 +381,7 @@ Expected:
 
 ### Request
 
-```text
+```http
 DELETE /api/tasks/<task_id>
 ```
 
@@ -419,11 +397,7 @@ Verify that the task is removed from the `tasks` table.
 
 # Category Testing
 
-The database schema contains:
-
-```text
-categories
-```
+The database schema contains a `categories` table.
 
 Categories belong to users.
 
@@ -447,19 +421,19 @@ Use the category ID belonging to the authenticated test user.
 
 ### Request
 
-```text
+```http
 POST /api/tasks
 ```
 
-### JSON body
+### JSON Body
 
 ```json
 {
-    "title": "Categorized task test",
-    "description": "Testing category assignment",
-    "status": "pending",
-    "priority": "medium",
-    "category_id": 1
+  "title": "Categorized task test",
+  "description": "Testing category assignment",
+  "status": "pending",
+  "priority": "medium",
+  "category_id": 1
 }
 ```
 
@@ -471,11 +445,7 @@ Replace `1` with the actual category ID belonging to the test user.
 201 Created
 ```
 
-The response should contain the selected:
-
-```text
-category_id
-```
+The response should contain the selected `category_id`.
 
 ---
 
@@ -487,12 +457,12 @@ For example:
 
 ```json
 {
-    "title": "Invalid category test",
-    "category_id": 2
+  "title": "Invalid category test",
+  "category_id": 2
 }
 ```
 
-where category `2` belongs to another user.
+Where category `2` belongs to another user.
 
 ### Expected
 
@@ -508,11 +478,9 @@ This confirms that one user cannot attach another user's category to their task.
 
 The database allows only these task statuses:
 
-```text
-pending
-in_progress
-completed
-```
+- `pending`
+- `in_progress`
+- `completed`
 
 ---
 
@@ -522,8 +490,8 @@ Try:
 
 ```json
 {
-    "title": "Invalid status test",
-    "status": "done"
+  "title": "Invalid status test",
+  "status": "done"
 }
 ```
 
@@ -539,18 +507,16 @@ Try:
 
 Allowed priorities are:
 
-```text
-low
-medium
-high
-```
+- `low`
+- `medium`
+- `high`
 
 Try:
 
 ```json
 {
-    "title": "Invalid priority test",
-    "priority": "urgent"
+  "title": "Invalid priority test",
+  "priority": "urgent"
 }
 ```
 
@@ -568,11 +534,11 @@ Try:
 
 Try:
 
-```text
+```http
 GET /api/tasks
 ```
 
-without the `Authorization` header.
+Without the `Authorization` header.
 
 ### Expected
 
@@ -588,10 +554,8 @@ Create two test users.
 
 For example:
 
-```text
-user1@example.com
-user2@example.com
-```
+- `user1@example.com`
+- `user2@example.com`
 
 Login as User 1 and create a task.
 
@@ -613,42 +577,158 @@ This verifies that task ownership is being enforced by the backend.
 
 ---
 
-# Database Integration Checklist
+# Admin Role Management
 
-After completing the tests, verify:
+FlowTask assigns the default `user` role to newly registered accounts. To grant administrator privileges to a teammate, an authorized developer or administrator can manually update the user's role in the MySQL database.
 
-| Test | Expected |
-|---|---|
-| MySQL running | PASS |
-| `todo_app` exists | PASS |
-| `users` table exists | PASS |
-| `categories` table exists | PASS |
-| `tasks` table exists | PASS |
-| Flask starts | PASS |
-| Health check | PASS |
-| User registration | PASS |
-| User stored in MySQL | PASS |
-| Password hashed | PASS |
-| Login | PASS |
-| JWT generated | PASS |
-| Create task | PASS |
-| Task stored in MySQL | PASS |
-| Get tasks | PASS |
-| Update task | PASS |
-| `updated_at` changes | PASS |
-| Delete task | PASS |
-| Category assignment | PASS |
-| Category ownership | PASS |
-| Invalid status rejected | PASS |
-| Invalid priority rejected | PASS |
-| Missing JWT rejected | PASS |
-| Task ownership enforced | PASS |
+Admin privileges should not be available as a self-selected role during public registration.
+
+## 23. Register a Teammate
+
+Ask the teammate to:
+
+1. Open the FlowTask registration page.
+2. Register using their name, email, and password.
+3. Log in once to make sure their account is created successfully.
+
+New accounts should have the default role of `user`.
 
 ---
 
-## If Something Fails
+## 24. Connect to MySQL
 
-Record:
+Open the MySQL command-line terminal:
+
+```powershell
+mysql -u root -p
+```
+
+Enter your MySQL password when prompted.
+
+---
+
+## 25. Select the Application Database
+
+```sql
+USE todo_app;
+```
+
+---
+
+## 26. Verify the User Account
+
+Check the registered users:
+
+```sql
+SELECT id, name, email, role
+FROM users;
+```
+
+Find the teammate's account using their registered email address.
+
+Confirm that their current role is `user` before proceeding.
+
+---
+
+## 27. Promote the User to Admin
+
+Replace the email address below with the exact registered email of the teammate you want to promote.
+
+```sql
+UPDATE users
+SET role = 'admin'
+WHERE email = 'teammate@example.com';
+```
+
+This updates the role of the specified account to `admin`.
+
+Make sure the email address matches the intended account.
+
+---
+
+## 28. Verify the Admin Role
+
+Run:
+
+```sql
+SELECT name, email, role
+FROM users
+WHERE email = 'teammate@example.com';
+```
+
+### Expected Result
+
+| Name          | Email                | Role  |
+| ------------- | -------------------- | ----- |
+| Teammate Name | teammate@example.com | admin |
+
+If the query returns `admin` in the role column, the promotion was successful.
+
+---
+
+## 29. Log In and Test Admin Access
+
+Ask the promoted teammate to:
+
+1. Log out of FlowTask.
+2. Log back in.
+3. Open the Admin Dashboard.
+4. Verify that admin functions are available.
+
+Re-login is important if the application stores the user's role inside the JWT token at login time.
+
+---
+
+## 30. Admin Security Verification
+
+Verify the following:
+
+- A normal user cannot access admin-only pages.
+- A normal user cannot perform admin-only API requests.
+- An admin can access authorized admin functionality.
+- Admin role assignment is not available during public registration.
+- Admin privileges are enforced by the backend, not only by hiding frontend buttons.
+
+---
+
+# Database Integration Checklist
+
+| Test                         | Expected |
+| ---------------------------- | -------- |
+| MySQL running                | PASS     |
+| `todo_app` exists            | PASS     |
+| `users` table exists         | PASS     |
+| `categories` table exists    | PASS     |
+| `tasks` table exists         | PASS     |
+| Flask starts                 | PASS     |
+| Health check                 | PASS     |
+| User registration            | PASS     |
+| User stored in MySQL         | PASS     |
+| Password hashed              | PASS     |
+| Login                        | PASS     |
+| JWT generated                | PASS     |
+| Create task                  | PASS     |
+| Task stored in MySQL         | PASS     |
+| Get tasks                    | PASS     |
+| Update task                  | PASS     |
+| `updated_at` changes         | PASS     |
+| Delete task                  | PASS     |
+| Category assignment          | PASS     |
+| Category ownership           | PASS     |
+| Invalid status rejected      | PASS     |
+| Invalid priority rejected    | PASS     |
+| Missing JWT rejected         | PASS     |
+| Task ownership enforced      | PASS     |
+| Admin role promotion         | PASS     |
+| Admin login                  | PASS     |
+| Admin dashboard access       | PASS     |
+| Admin authorization enforced | PASS     |
+
+---
+
+# If Something Fails
+
+Record the following information:
 
 1. API endpoint
 2. HTTP status code
@@ -656,7 +736,7 @@ Record:
 4. Flask terminal error, if any
 5. MySQL error, if any
 
-For example:
+Example:
 
 ```text
 Endpoint:
@@ -675,12 +755,26 @@ MySQL:
 ...
 ```
 
-This information is enough to identify whether the problem is in:
+This information helps identify whether the problem is in:
 
 - Flask/backend code
 - SQLAlchemy model
 - MySQL connection
-- database schema
+- Database schema
 - `.env` configuration
-- authentication/JWT
-- test request
+- Authentication/JWT
+- Task validation
+- Category ownership
+- Admin authorization
+
+---
+
+# Security Notes
+
+- Never commit `.env` files or credentials to GitHub.
+- Passwords must be stored as hashes, never plaintext.
+- Do not allow users to assign themselves an `admin` role during registration.
+- Admin role changes should be performed only by authorized personnel.
+- Protected API endpoints must verify the JWT and authorization permissions on the backend.
+- Hiding admin options in the frontend alone is not sufficient security.
+- Use a dedicated database account with appropriate permissions in production.
